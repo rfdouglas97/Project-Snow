@@ -1,73 +1,87 @@
-# Welcome to your Lovable project
+
+# Flask + Supabase OAuth and Storage Demo
+
+A modern web application that demonstrates integration between a Flask backend and Supabase services for authentication, database management, and file storage.
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/80abf56c-759b-449a-9d84-dc9ecb2b2969
 
-## How can I edit this code?
+## Features
 
-There are several ways of editing your application.
+- **OAuth Authentication**: Support for Google and Apple sign-in
+- **Secure File Storage**: Upload and manage files with Supabase Storage
+- **User Management**: User registration and profile management
+- **API Testing Interface**: Interactive UI to test backend endpoints
 
-**Use Lovable**
+## Getting Started with the Backend
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/80abf56c-759b-449a-9d84-dc9ecb2b2969) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Python 3.8 or higher
+- Supabase account and project
 
-**Use your preferred IDE**
+### Setup Instructions
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Navigate to the backend directory:
+   ```
+   cd backend
+   ```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install the required dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
 
-Follow these steps:
+3. Set up environment variables (in a production environment):
+   ```
+   export SUPABASE_URL=your_supabase_url
+   export SUPABASE_KEY=your_supabase_key
+   export SECRET_KEY=your_flask_secret_key
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+4. Run the Flask application:
+   ```
+   flask run
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Frontend Development
 
-# Step 3: Install the necessary dependencies.
-npm i
+The frontend is built with React and communicates with the Flask backend. To run the frontend:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Connecting to Supabase
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+To enable the full functionality of this application, you need to connect it to Supabase:
 
-**Use GitHub Codespaces**
+1. Open Lovable and click on the green Supabase button in the top right
+2. Connect to your Supabase project or create a new one
+3. Configure the necessary Supabase resources:
+   - Auth providers (Google, Apple)
+   - Storage buckets
+   - Database tables
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## API Endpoints
 
-## What technologies are used for this project?
+### Authentication
+- `/api/auth/google` - Initiate Google OAuth flow
+- `/api/auth/apple` - Initiate Apple OAuth flow
 
-This project is built with:
+### Storage
+- `/api/storage/upload` - Upload files to Supabase Storage
+- `/api/storage/files` - List files from Supabase Storage
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### User Management
+- `/api/users/me` - Get current user information
 
-## How can I deploy this project?
+### System
+- `/api/health` - Health check endpoint
 
-Simply open [Lovable](https://lovable.dev/projects/80abf56c-759b-449a-9d84-dc9ecb2b2969) and click on Share -> Publish.
+## Security Considerations
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- All API endpoints that handle user data or files are protected with authentication
+- Files are securely uploaded with proper validation
+- OAuth flows follow security best practices
