@@ -1,8 +1,6 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,16 +42,18 @@ export function ProductTryOn({
         return false;
       }
 
-      // Get user's latest avatar from the database
-      const { data: avatarData, error: avatarError } = await supabase
-        .from('user_avatars')
-        .select('avatar_image_path')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      // Get user's latest avatar from storage directly
+      // Since we don't have a user_avatars table properly defined in types,
+      // we'll get avatars from storage instead
+      const { data: storageData, error: storageError } = await supabase
+        .storage
+        .from('avatars')
+        .list(`user-${user.id}`, {
+          limit: 1,
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
 
-      if (avatarError || !avatarData) {
+      if (storageError || !storageData || storageData.length === 0) {
         toast({
           title: "No avatar found",
           description: "Please create an avatar first in the Avatar Generator",
@@ -63,10 +63,10 @@ export function ProductTryOn({
       }
 
       // Get public URL of the avatar
-      const avatarPath = avatarData.avatar_image_path;
+      const avatarPath = storageData[0].name;
       const avatarUrl = supabase.storage
         .from('avatars')
-        .getPublicUrl(avatarPath.replace('avatars/', '')).data.publicUrl;
+        .getPublicUrl(`user-${user.id}/${avatarPath}`).data.publicUrl;
 
       setUserAvatar(avatarUrl);
       return true;
