@@ -116,10 +116,30 @@ Your response MUST be valid JSON with an image_url field containing only the URL
       })
     })
 
+    // Enhanced error handling for OpenAI API response
     if (!openAIResponse.ok) {
-      const errorData = await openAIResponse.json()
-      console.error('OpenAI API error:', errorData)
-      throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`)
+      const errorText = await openAIResponse.text();
+      let errorJson;
+      
+      try {
+        errorJson = JSON.parse(errorText);
+        console.error('OpenAI API error (parsed):', errorJson);
+      } catch (parseError) {
+        console.error('OpenAI API error (raw text):', errorText);
+        console.error('Parse error:', parseError);
+      }
+      
+      console.error('OpenAI API HTTP status:', openAIResponse.status);
+      console.error('OpenAI API status text:', openAIResponse.statusText);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'OpenAI API error', 
+          status: openAIResponse.status,
+          details: errorJson || errorText
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const openAIData = await openAIResponse.json()
@@ -175,8 +195,27 @@ Your response MUST be valid JSON with an image_url field containing only the URL
     // Download the generated avatar from the URL provided by GPT-4o
     console.log('Downloading image from URL:', generatedImageUrl)
     const avatarResponse = await fetch(generatedImageUrl)
+    
+    // Enhanced error handling for image download
     if (!avatarResponse.ok) {
-      throw new Error(`Failed to download generated avatar: ${avatarResponse.status}`)
+      console.error('Image download error status:', avatarResponse.status);
+      console.error('Image download status text:', avatarResponse.statusText);
+      
+      try {
+        const errorText = await avatarResponse.text();
+        console.error('Image download error response:', errorText);
+      } catch (e) {
+        console.error('Could not read image download error response');
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to download generated image', 
+          status: avatarResponse.status,
+          url: generatedImageUrl
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
     
     const avatarBlob = await avatarResponse.blob()

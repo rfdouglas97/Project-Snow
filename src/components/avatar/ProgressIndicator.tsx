@@ -1,22 +1,35 @@
 
 import { Progress } from "@/components/ui/progress";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ProgressIndicatorProps {
   isUploading: boolean;
   uploadProgress: number;
   isGenerating: boolean;
+  error?: string | null;
 }
 
 export function ProgressIndicator({ 
   isUploading, 
   uploadProgress, 
-  isGenerating 
+  isGenerating,
+  error 
 }: ProgressIndicatorProps) {
-  if (!isUploading && !isGenerating) return null;
+  if (!isUploading && !isGenerating && !error) return null;
   
   return (
     <div className="space-y-4">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription className="text-sm">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {isUploading && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">

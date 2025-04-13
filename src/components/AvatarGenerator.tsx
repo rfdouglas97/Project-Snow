@@ -18,6 +18,7 @@ export function AvatarGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileChange = (selectedFile: File | null) => {
     setFile(selectedFile);
@@ -35,6 +36,7 @@ export function AvatarGenerator() {
     // Reset states when a new file is selected
     setGeneratedAvatarUrl(null);
     setIsCompleted(false);
+    setError(null);
   };
 
   const handleUpload = async () => {
@@ -49,6 +51,7 @@ export function AvatarGenerator() {
 
     try {
       setIsUploading(true);
+      setError(null);
       
       // Simulate upload progress
       const progressInterval = setInterval(() => {
@@ -118,7 +121,15 @@ export function AvatarGenerator() {
 
       if (error) {
         console.error("Function error:", error);
+        setError(`Edge function error: ${error.message}`);
         throw error;
+      }
+
+      // Check if the response contains an error
+      if (data.error) {
+        console.error("Generation error:", data.error, data.details);
+        setError(`Image generation error: ${data.error}. ${data.details ? JSON.stringify(data.details) : ''}`);
+        throw new Error(data.error);
       }
 
       console.log("Generated avatar response:", data);
@@ -134,9 +145,15 @@ export function AvatarGenerator() {
       });
     } catch (error) {
       console.error("Error during avatar generation:", error);
+      const errorMessage = error.message || "There was an error generating your avatar";
+      
+      if (!error) {
+        setError(errorMessage);
+      }
+      
       toast({
         title: "Generation failed",
-        description: error.message || "There was an error generating your avatar",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -151,6 +168,7 @@ export function AvatarGenerator() {
     setPreviewUrl(null);
     setGeneratedAvatarUrl(null);
     setIsCompleted(false);
+    setError(null);
   };
 
   return (
@@ -177,7 +195,8 @@ export function AvatarGenerator() {
             <ProgressIndicator 
               isUploading={isUploading} 
               uploadProgress={uploadProgress} 
-              isGenerating={isGenerating} 
+              isGenerating={isGenerating}
+              error={error}
             />
           </>
         ) : (
