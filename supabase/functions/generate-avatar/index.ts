@@ -67,7 +67,7 @@ serve(async (req) => {
     console.log('Sending image to GPT-4o for transformation')
     
     // Call OpenAI API with the image as input to generate avatar directly with GPT-4o
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openAIResponse = await fetch('https://api.openai.com/v1/images/edits', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
