@@ -15,8 +15,11 @@ export const AuthButtons = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading({...isLoading, google: true});
     try {
-      // Prefer the published URL over localhost
-      const redirectUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+      // Get the current domain - this should work for both local and published versions
+      const currentUrl = new URL(window.location.href);
+      const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}`;
+      
+      console.log("Redirecting to:", redirectUrl);
       
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
