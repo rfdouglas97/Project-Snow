@@ -77,8 +77,11 @@ export function AvatarGenerator() {
         return;
       }
 
+      // Create user folder if it doesn't exist
+      const userFolder = `user-${user.id}`;
+      
       // Upload file to user_uploads bucket
-      const fileName = `user-${user.id}-${Date.now()}.${file.name.split('.').pop()}`;
+      const fileName = `${userFolder}/${Date.now()}-${file.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('user_uploads')
         .upload(fileName, file, {
@@ -89,6 +92,7 @@ export function AvatarGenerator() {
       clearInterval(progressInterval);
       
       if (uploadError) {
+        console.error("Upload error:", uploadError);
         throw uploadError;
       }
 
@@ -98,6 +102,8 @@ export function AvatarGenerator() {
       const { data: { publicUrl } } = supabase.storage
         .from('user_uploads')
         .getPublicUrl(fileName);
+
+      console.log("File uploaded to:", publicUrl);
 
       // Call edge function to generate avatar
       setIsGenerating(true);
@@ -109,8 +115,11 @@ export function AvatarGenerator() {
       });
 
       if (error) {
+        console.error("Function error:", error);
         throw error;
       }
+
+      console.log("Generated avatar response:", data);
 
       // Set the generated avatar URL
       setGeneratedAvatarUrl(data.avatarUrl);

@@ -21,16 +21,24 @@ export function useAvatarFetching() {
         return false;
       }
 
+      // User folder path in storage
+      const userFolder = `user-${user.id}`;
+      
       // Get user's latest avatar from storage
       const { data: storageData, error: storageError } = await supabase
         .storage
         .from('avatars')
-        .list(`user-${user.id}`, {
+        .list(userFolder, {
           limit: 1,
           sortBy: { column: 'created_at', order: 'desc' }
         });
 
-      if (storageError || !storageData || storageData.length === 0) {
+      if (storageError) {
+        console.error("Storage error:", storageError);
+        throw storageError;
+      }
+
+      if (!storageData || storageData.length === 0) {
         toast({
           title: "No avatar found",
           description: "Please create an avatar first in the Avatar Generator",
@@ -40,12 +48,13 @@ export function useAvatarFetching() {
       }
 
       // Get public URL of the avatar
-      const avatarPath = storageData[0].name;
-      const avatarUrl = supabase.storage
+      const avatarPath = `${userFolder}/${storageData[0].name}`;
+      const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(`user-${user.id}/${avatarPath}`).data.publicUrl;
+        .getPublicUrl(avatarPath);
 
-      setUserAvatar(avatarUrl);
+      console.log("Found user avatar at:", publicUrl);
+      setUserAvatar(publicUrl);
       return true;
     } catch (error) {
       console.error("Error fetching user avatar:", error);
