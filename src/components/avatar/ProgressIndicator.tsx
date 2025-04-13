@@ -30,7 +30,7 @@ export function ProgressIndicator({
       {isGenerating && (
         <div className="flex flex-col items-center justify-center py-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-          <p className="text-sm text-center">GPT-4o is generating your standardized avatar...</p>
+          <p className="text-sm text-center">GPT-4o is generating your full-body avatar...</p>
         </div>
       )}
     </div>

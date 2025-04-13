@@ -19,21 +19,22 @@ export function GeneratedAvatar({
   
   return (
     <div className="space-y-4">
-      <div className="text-center font-medium">Your Standardized Avatar</div>
+      <div className="text-center font-medium">Your Full-Body Avatar</div>
       <div className="flex justify-center">
         {generatedAvatarUrl ? (
-          <Avatar className="h-40 w-40">
-            <AvatarImage src={generatedAvatarUrl} alt="Generated Avatar" />
-            <AvatarFallback>
-              <Skeleton className="h-40 w-40 rounded-full" />
-            </AvatarFallback>
-          </Avatar>
+          <div className="h-96 w-full max-w-md rounded-md overflow-hidden border">
+            <img 
+              src={generatedAvatarUrl} 
+              alt="Generated Avatar" 
+              className="object-contain w-full h-full"
+            />
+          </div>
         ) : (
-          <Skeleton className="h-40 w-40 rounded-full" />
+          <Skeleton className="h-96 w-full max-w-md rounded-md" />
         )}
       </div>
       <div className="text-center text-sm text-muted-foreground">
-        Your avatar has been standardized with plain white clothing and a neutral background
+        Your full-body avatar has been generated with neutral-colored clothing and background
       </div>
       <div className="w-full flex gap-2">
         <Button variant="outline" onClick={onReset} className="flex-1 gap-2">

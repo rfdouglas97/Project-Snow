@@ -77,7 +77,17 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "dall-e-3",
-        prompt: `Create a highly photorealistic avatar of this person wearing plain white clothing against a plain white background. The avatar should be a professional photo portrait, showing only the person from shoulders up. Maintain the person's exact facial features, hairstyle, and skin tone, but standardize the clothing to plain white. Do not modify the person's appearance beyond the clothing change and white background.`,
+        prompt: `Please generate a realistic, full-length image based directly on the provided photo, preserving the exact appearance of the person completely. Do NOT alter their facial features, skin color, body shape, or overall identity at all.
+
+Explicitly follow these guidelines:
+
+Clearly place the person against a plain, solid, neutral-colored background (soft white, beige, or very light grey).
+
+Change their clothing explicitly to neutral-colored clothing (white or grey), maintaining realistic textures and natural lighting.
+
+Keep the overall style completely realistic—do NOT cartoonify or stylize.
+
+Ensure a full-body view is clearly visible, showing from head to toe.`,
         n: 1,
         size: "1024x1024",
         quality: "hd",

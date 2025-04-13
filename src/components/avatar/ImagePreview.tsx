@@ -10,11 +10,11 @@ export function ImagePreview({ previewUrl }: ImagePreviewProps) {
   
   return (
     <div className="mt-4 relative">
-      <div className="rounded-md overflow-hidden border w-full h-64 flex items-center justify-center">
+      <div className="rounded-md overflow-hidden border w-full h-96 flex items-center justify-center">
         <img 
           src={previewUrl} 
           alt="Preview" 
-          className="object-contain max-h-full"
+          className="object-contain max-h-full max-w-full"
         />
       </div>
     </div>
