@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUpload } from "@/components/FileUpload";
 import { AuthButtons } from "@/components/AuthButtons";
 import { ApiDemo } from "@/components/ApiDemo";
+import { AvatarGenerator } from "@/components/AvatarGenerator";
 
 const Index = () => {
   return (
@@ -20,9 +21,10 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="auth" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="auth">Authentication</TabsTrigger>
             <TabsTrigger value="storage">File Storage</TabsTrigger>
+            <TabsTrigger value="avatar">Avatar Generator</TabsTrigger>
             <TabsTrigger value="api">API Testing</TabsTrigger>
           </TabsList>
           
@@ -59,6 +61,25 @@ const Index = () => {
               <CardFooter>
                 <p className="text-sm text-gray-500">
                   Files are stored securely in your Supabase bucket
+                </p>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="avatar" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Avatar Generator</CardTitle>
+                <CardDescription>
+                  Create a personalized avatar using AI
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AvatarGenerator />
+              </CardContent>
+              <CardFooter>
+                <p className="text-sm text-gray-500">
+                  Powered by OpenAI and Supabase Edge Functions
                 </p>
               </CardFooter>
             </Card>
@@ -106,6 +127,12 @@ const Index = () => {
                 <dt className="text-sm font-medium text-gray-500">File Upload</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   <code className="px-2 py-1 bg-gray-100 rounded">/api/storage/upload</code>
+                </dd>
+              </div>
+              <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">Avatar Generation</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                  <code className="px-2 py-1 bg-gray-100 rounded">/functions/generate-avatar</code>
                 </dd>
               </div>
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
