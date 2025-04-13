@@ -10,7 +10,7 @@ export const Navbar = () => {
             <img 
               src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png" 
               alt="Mira" 
-              className="h-20" // Changed from h-10 to h-20 to make it 2x larger
+              className="h-20"
             />
           </Link>
         </div>
@@ -25,7 +25,7 @@ export const Navbar = () => {
             to="/products" 
             className="text-mira-text hover:text-mira-purple font-medium transition-colors"
           >
-            Products
+            Demo
           </Link>
           <Link 
             to="/products" 

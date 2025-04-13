@@ -46,7 +46,7 @@ const Index = () => {
             Let your customers try before they buy
           </p>
           <div className="mt-8">
-            <Link to="/products">
+            <Link to="/demo">
               <Button size="lg" className="bg-gradient-primary rounded-full px-8 py-6 text-lg font-medium hover:shadow-lg transition-shadow duration-300">
                 Try on with Mira
               </Button>
