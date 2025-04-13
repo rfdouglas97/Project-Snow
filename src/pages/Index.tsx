@@ -7,8 +7,34 @@ import { AuthButtons } from "@/components/AuthButtons";
 import { ApiDemo } from "@/components/ApiDemo";
 import { AvatarGenerator } from "@/components/AvatarGenerator";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Index = () => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get the current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
@@ -28,6 +54,22 @@ const Index = () => {
           </div>
         </div>
 
+        {user && (
+          <div className="mb-8 flex flex-col items-center justify-center">
+            <Avatar className="h-20 w-20 mb-4">
+              {user.user_metadata.avatar_url ? (
+                <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata.full_name || "User"} />
+              ) : (
+                <AvatarFallback>{user.email?.substring(0, 2).toUpperCase()}</AvatarFallback>
+              )}
+            </Avatar>
+            <h2 className="text-2xl font-bold">Welcome, {user.user_metadata.full_name || user.email}</h2>
+            <Button onClick={handleSignOut} variant="outline" className="mt-2">
+              Sign Out
+            </Button>
+          </div>
+        )}
+
         <Tabs defaultValue="auth" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="auth">Authentication</TabsTrigger>
@@ -41,11 +83,22 @@ const Index = () => {
               <CardHeader>
                 <CardTitle>OAuth Authentication</CardTitle>
                 <CardDescription>
-                  Sign in with Google or Apple to test the authentication flow
+                  {user 
+                    ? "You are currently signed in." 
+                    : "Sign in with Google or Apple to test the authentication flow"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <AuthButtons />
+                {user ? (
+                  <div className="text-center">
+                    <p>Signed in as: {user.email}</p>
+                    <Button onClick={handleSignOut} className="mt-4">
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <AuthButtons />
+                )}
               </CardContent>
               <CardFooter className="flex justify-between">
                 <p className="text-sm text-gray-500">

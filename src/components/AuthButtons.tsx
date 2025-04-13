@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { FaGoogle, FaApple } from "react-icons/fa";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AuthButtons = () => {
   const { toast } = useToast();
@@ -14,12 +15,20 @@ export const AuthButtons = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading({...isLoading, google: true});
     try {
-      // This would connect to our Flask backend in a real implementation
-      toast({
-        title: "Supabase Integration Required",
-        description: "Please connect your project to Supabase to enable Google authentication.",
-        variant: "default",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
       });
+      
+      if (error) {
+        toast({
+          title: "Authentication Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Authentication Error",
@@ -75,7 +84,7 @@ export const AuthButtons = () => {
       
       <div className="text-center pt-2">
         <p className="text-sm text-gray-500">
-          Requires Supabase integration for actual implementation
+          Authentication powered by Supabase
         </p>
       </div>
     </div>
