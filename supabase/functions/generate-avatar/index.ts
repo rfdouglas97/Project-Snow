@@ -64,25 +64,49 @@ serve(async (req) => {
     const arrayBuffer = await fileData.arrayBuffer()
     const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     
-    console.log('Sending image to OpenAI for transformation')
+    console.log('Sending image to GPT-4o for transformation')
     
-    // Use Dalle API directly instead of GPT-4o for image generation
-    const openAIResponse = await fetch('https://api.openai.com/v1/images/generations', {
+    // Call OpenAI API with the image as input to generate avatar directly with GPT-4o
+    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: `Create a professional, standardized avatar based on this person's photo. 
-        Place the person against a plain, neutral background (white or light gray). 
-        The image should show a full-body view with neutral-colored clothing (white or gray). 
-        Maintain the person's exact facial features and appearance, but standardize the presentation style.
-        This is for an identification photo in a professional context.`,
-        n: 1,
-        size: "1024x1024",
-        quality: "standard",
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert in image generation and transformation. Generate a realistic image directly based on the uploaded photo. Return ONLY valid JSON with an 'image_url' field containing the URL to the generated image. Your response must be parseable as JSON."
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text", 
+                text: `Please generate a realistic, full-length image based directly on the provided photo, preserving the exact appearance of the person completely. Do NOT alter their facial features, skin color, body shape, or overall identity at all.
+
+Explicitly follow these guidelines:
+- Clearly place the person against a plain, solid, neutral-colored background (soft white, beige, or very light grey).
+- Change their clothing explicitly to neutral-colored clothing (white or grey), maintaining realistic textures and natural lighting.
+- Keep the overall style completely realistic—do NOT cartoonify or stylize.
+- Ensure a full-body view is clearly visible, showing from head to toe.
+
+Your response MUST be valid JSON with an image_url field containing only the URL to the generated image. Example: {"image_url": "https://example.com/image.jpg"}`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/png;base64,${base64Image}`,
+                  detail: "high"
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 2048,
+        response_format: { "type": "json_object" }
       })
     })
 
@@ -98,15 +122,51 @@ serve(async (req) => {
     // Log the entire response structure for debugging
     console.log('Full OpenAI response structure:', JSON.stringify(openAIData))
     
-    // Parse the image URL from the Dalle response
-    const generatedImageUrl = openAIData.data[0].url
-    if (!generatedImageUrl) {
-      throw new Error('No image URL found in DALL-E response')
+    // Parse the image URL from the GPT-4o response
+    let generatedImageUrl = null
+    try {
+      if (!openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {
+        console.error('Unexpected OpenAI response structure:', openAIData)
+        throw new Error('Invalid OpenAI response structure')
+      }
+      
+      const messageContent = openAIData.choices[0].message.content
+      console.log('Raw message content:', messageContent)
+      
+      let jsonContent
+      if (typeof messageContent === 'string') {
+        try {
+          jsonContent = JSON.parse(messageContent)
+        } catch (parseError) {
+          console.error('Failed to parse message content as JSON:', parseError)
+          
+          // Try to extract URL using regex as fallback
+          const urlMatch = messageContent.match(/"image_url"\s*:\s*"([^"]+)"/)
+          if (urlMatch && urlMatch[1]) {
+            generatedImageUrl = urlMatch[1]
+            console.log('Extracted image URL using regex:', generatedImageUrl)
+          } else {
+            throw new Error('Could not extract image URL from response')
+          }
+        }
+      } else if (typeof messageContent === 'object') {
+        jsonContent = messageContent
+      }
+      
+      if (!generatedImageUrl && jsonContent) {
+        generatedImageUrl = jsonContent.image_url
+        console.log('Extracted image URL from JSON:', generatedImageUrl)
+      }
+      
+      if (!generatedImageUrl) {
+        throw new Error('No image URL found in GPT-4o response')
+      }
+    } catch (parseError) {
+      console.error('Error parsing GPT-4o response:', parseError)
+      throw new Error('Failed to parse image URL from GPT-4o response')
     }
-    
-    console.log('Generated image URL:', generatedImageUrl)
 
-    // Download the generated avatar from the URL provided by OpenAI
+    // Download the generated avatar from the URL provided by GPT-4o
     console.log('Downloading image from URL:', generatedImageUrl)
     const avatarResponse = await fetch(generatedImageUrl)
     if (!avatarResponse.ok) {
