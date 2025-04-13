@@ -15,12 +15,13 @@ export const AuthButtons = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading({...isLoading, google: true});
     try {
-      // Use redirectTo that matches the site URL in Supabase Auth settings
-      // This properly handles both localhost and preview environments
+      // Prefer the published URL over localhost
+      const redirectUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
