@@ -15,14 +15,21 @@ export const AuthButtons = () => {
   const handleGoogleSignIn = async () => {
     setIsLoading({...isLoading, google: true});
     try {
+      // Use redirectTo that matches the site URL in Supabase Auth settings
+      // This properly handles both localhost and preview environments
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: window.location.origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
       
       if (error) {
+        console.error("Auth error:", error);
         toast({
           title: "Authentication Error",
           description: error.message,
@@ -30,6 +37,7 @@ export const AuthButtons = () => {
         });
       }
     } catch (error) {
+      console.error("Unexpected error:", error);
       toast({
         title: "Authentication Error",
         description: "Failed to initiate Google sign-in",
