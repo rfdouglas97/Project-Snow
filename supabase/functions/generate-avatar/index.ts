@@ -34,44 +34,60 @@ serve(async (req) => {
     console.log('Processing avatar generation for user:', userId)
     console.log('Image URL:', imageUrl)
 
-    // For demonstration purposes, just returning the same image
-    // In a real implementation, you would use OpenAI's API to generate the avatar
-    const generatedAvatarUrl = imageUrl
+    // Extract path from the imageUrl
+    // The URL format is like: https://domain.com/storage/v1/object/public/bucket_name/path/to/file.ext
+    const urlParts = imageUrl.split('/storage/v1/object/public/')
+    if (urlParts.length < 2) {
+      throw new Error('Invalid image URL format')
+    }
     
-    // In a real implementation you'd download and process the image here
-    // const avatarResponse = await fetch(generatedAvatarUrl)
-    // const avatarBlob = await avatarResponse.blob()
+    const pathParts = urlParts[1].split('/')
+    const bucketName = pathParts[0]
+    const imagePath = pathParts.slice(1).join('/')
     
-    // For now, we'll just upload the same image to the avatars bucket
-    // Define the path for the avatar in the user's folder
-    const userFolder = `user-${userId}`
-    const avatarFileName = `${userFolder}/avatar-${Date.now()}.png`
-    
-    // This is where you would upload the processed avatar
-    // In a real implementation, this would be the AI-generated avatar
-    // For now, we'll just copy the file from the source bucket to the avatars bucket
-    const { data: copyData, error: copyError } = await supabase
-      .storage
-      .from('user_uploads')
-      .copy(
-        imageUrl.split('/').slice(-2).join('/'), // Extract path from URL
-        avatarFileName,
-        {
-          sourceKey: undefined,
-          destKey: undefined,
-          contentType: 'image/png'
-        }
-      )
+    console.log('Extracted bucket name:', bucketName)
+    console.log('Extracted image path:', imagePath)
 
-    if (copyError) {
-      console.error('Error copying file:', copyError)
-      throw copyError
+    // Define the destination path for the avatar
+    const userFolder = `user-${userId}`
+    const avatarFileName = `${Date.now()}.png`
+    const avatarPath = `${userFolder}/${avatarFileName}`
+    
+    console.log('Destination path:', avatarPath)
+
+    // For demonstration, we'll download the image and then upload it to the avatars bucket
+    const { data: fileData, error: downloadError } = await supabase
+      .storage
+      .from(bucketName)
+      .download(imagePath)
+    
+    if (downloadError) {
+      console.error('Error downloading file:', downloadError)
+      throw downloadError
+    }
+    
+    console.log('File downloaded successfully')
+
+    // Upload the file to the avatars bucket
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('avatars')
+      .upload(avatarPath, fileData, {
+        contentType: 'image/png',
+        upsert: true
+      })
+
+    if (uploadError) {
+      console.error('Error uploading file:', uploadError)
+      throw uploadError
     }
 
-    // Get public URL for the copied avatar
+    console.log('File uploaded successfully')
+
+    // Get the public URL for the uploaded avatar
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
-      .getPublicUrl(avatarFileName)
+      .getPublicUrl(avatarPath)
 
     console.log('Avatar generated and stored at:', publicUrl)
 

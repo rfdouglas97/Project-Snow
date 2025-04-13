@@ -6,8 +6,10 @@ import { useToast } from "@/components/ui/use-toast";
 export function useAvatarFetching() {
   const { toast } = useToast();
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchUserAvatar = async () => {
+    setIsLoading(true);
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -18,6 +20,7 @@ export function useAvatarFetching() {
           description: "Please sign in to use the try-on feature",
           variant: "destructive",
         });
+        setIsLoading(false);
         return false;
       }
 
@@ -44,6 +47,7 @@ export function useAvatarFetching() {
           description: "Please create an avatar first in the Avatar Generator",
           variant: "destructive",
         });
+        setIsLoading(false);
         return false;
       }
 
@@ -55,6 +59,7 @@ export function useAvatarFetching() {
 
       console.log("Found user avatar at:", publicUrl);
       setUserAvatar(publicUrl);
+      setIsLoading(false);
       return true;
     } catch (error) {
       console.error("Error fetching user avatar:", error);
@@ -63,9 +68,10 @@ export function useAvatarFetching() {
         description: "Could not retrieve your avatar image",
         variant: "destructive",
       });
+      setIsLoading(false);
       return false;
     }
   };
 
-  return { userAvatar, fetchUserAvatar, setUserAvatar };
+  return { userAvatar, fetchUserAvatar, setUserAvatar, isLoading };
 }
