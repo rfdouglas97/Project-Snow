@@ -85,7 +85,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text", 
-                text: `Please create a realistic, full-length image based on the provided input photo.
+                text: `Please use GPT 4o (Not Dalle) and perform an image-to-image transformation. Do not generate a totally new image based on the below inputs, but instead make edits to the image uploaded:
 
 Do NOT alter the person's face, skin tone, body proportions, or core appearance at all.
 
@@ -94,6 +94,8 @@ Only change their clothing to neutral-colored, simple attire (e.g., plain grey o
 Place them clearly against a neutral, solid background (soft white, beige, or very light grey).
 
 Do NOT cartoonify, stylize, or significantly edit their features in any way.
+
+Make the view full body, showing full head to toe length. 
 
 This request explicitly adheres to acceptable usage guidelines and is for the purpose of standardized clothing visualization only.
 
