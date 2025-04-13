@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -77,7 +78,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are an expert in image generation and transformation. Generate realistic images in response to users' requests. Return your response in JSON format with an image_url field."
+            content: "You are an expert in image generation and transformation. Generate a realistic image directly based on the uploaded photo. Return ONLY valid JSON with an 'image_url' field containing the URL to the generated image. Your response must be parseable as JSON."
           },
           {
             role: "user",
@@ -87,16 +88,12 @@ serve(async (req) => {
                 text: `Please generate a realistic, full-length image based directly on the provided photo, preserving the exact appearance of the person completely. Do NOT alter their facial features, skin color, body shape, or overall identity at all.
 
 Explicitly follow these guidelines:
+- Clearly place the person against a plain, solid, neutral-colored background (soft white, beige, or very light grey).
+- Change their clothing explicitly to neutral-colored clothing (white or grey), maintaining realistic textures and natural lighting.
+- Keep the overall style completely realistic—do NOT cartoonify or stylize.
+- Ensure a full-body view is clearly visible, showing from head to toe.
 
-Clearly place the person against a plain, solid, neutral-colored background (soft white, beige, or very light grey).
-
-Change their clothing explicitly to neutral-colored clothing (white or grey), maintaining realistic textures and natural lighting.
-
-Keep the overall style completely realistic—do NOT cartoonify or stylize.
-
-Ensure a full-body view is clearly visible, showing from head to toe.
-
-Return your response in JSON format with an image_url field containing the URL to the generated image.`
+Your response MUST be valid JSON with an image_url field containing only the URL to the generated image. Example: {"image_url": "https://example.com/image.jpg"}`
               },
               {
                 type: "image_url",
@@ -122,33 +119,55 @@ Return your response in JSON format with an image_url field containing the URL t
     const openAIData = await openAIResponse.json()
     console.log('OpenAI response received')
     
+    // Log the entire response structure for debugging
+    console.log('Full OpenAI response structure:', JSON.stringify(openAIData))
+    
     // Parse the image URL from the GPT-4o response
     let generatedImageUrl = null
     try {
-      // The response should be JSON since we specified response_format as json_object
-      const parsedContent = openAIData.choices[0].message.content
+      if (!openAIData.choices || !openAIData.choices[0] || !openAIData.choices[0].message) {
+        console.error('Unexpected OpenAI response structure:', openAIData)
+        throw new Error('Invalid OpenAI response structure')
+      }
       
-      // If the content is already parsed as JSON, use it directly
-      if (typeof parsedContent === 'object') {
-        generatedImageUrl = parsedContent.image_url
-      } else {
-        // Otherwise parse it as JSON
-        const jsonContent = JSON.parse(parsedContent)
+      const messageContent = openAIData.choices[0].message.content
+      console.log('Raw message content:', messageContent)
+      
+      let jsonContent
+      if (typeof messageContent === 'string') {
+        try {
+          jsonContent = JSON.parse(messageContent)
+        } catch (parseError) {
+          console.error('Failed to parse message content as JSON:', parseError)
+          
+          // Try to extract URL using regex as fallback
+          const urlMatch = messageContent.match(/"image_url"\s*:\s*"([^"]+)"/)
+          if (urlMatch && urlMatch[1]) {
+            generatedImageUrl = urlMatch[1]
+            console.log('Extracted image URL using regex:', generatedImageUrl)
+          } else {
+            throw new Error('Could not extract image URL from response')
+          }
+        }
+      } else if (typeof messageContent === 'object') {
+        jsonContent = messageContent
+      }
+      
+      if (!generatedImageUrl && jsonContent) {
         generatedImageUrl = jsonContent.image_url
+        console.log('Extracted image URL from JSON:', generatedImageUrl)
       }
       
       if (!generatedImageUrl) {
         throw new Error('No image URL found in GPT-4o response')
       }
-      
-      console.log('Successfully extracted image URL from GPT-4o response')
     } catch (parseError) {
       console.error('Error parsing GPT-4o response:', parseError)
-      console.log('Raw GPT-4o response:', openAIData.choices[0].message.content)
       throw new Error('Failed to parse image URL from GPT-4o response')
     }
 
     // Download the generated avatar from the URL provided by GPT-4o
+    console.log('Downloading image from URL:', generatedImageUrl)
     const avatarResponse = await fetch(generatedImageUrl)
     if (!avatarResponse.ok) {
       throw new Error(`Failed to download generated avatar: ${avatarResponse.status}`)
