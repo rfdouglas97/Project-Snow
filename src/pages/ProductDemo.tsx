@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ProductTryOn } from "@/components/ProductTryOn";
+import { ProductTryOn } from "@/components/product-try-on/ProductTryOn";
 import { toast } from "@/components/ui/use-toast";
 
 const ProductDemo = () => {
