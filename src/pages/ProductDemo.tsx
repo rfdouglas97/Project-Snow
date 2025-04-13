@@ -33,10 +33,10 @@ const ProductDemo = () => {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-mira-text font-heading sm:text-5xl lg:text-6xl">
-            Try on products with <span className="text-transparent bg-clip-text bg-gradient-primary">Mira</span>
+            Try on with <span className="text-transparent bg-clip-text bg-gradient-primary">Mira</span>
           </h1>
           <p className="mt-5 max-w-xl mx-auto text-xl text-mira-text/80">
-            See how clothes look on you before you buy
+            Let your customers try before they buy
           </p>
         </div>
 
