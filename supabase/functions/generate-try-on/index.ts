@@ -53,6 +53,30 @@ serve(async (req) => {
       })
     })
 
+    if (!openAIResponse.ok) {
+      const errorText = await openAIResponse.text();
+      let errorJson;
+      
+      try {
+        errorJson = JSON.parse(errorText);
+        console.error('OpenAI API error (parsed):', errorJson);
+      } catch (parseError) {
+        console.error('OpenAI API error (raw text):', errorText);
+      }
+      
+      console.error('OpenAI API HTTP status:', openAIResponse.status);
+      console.error('OpenAI API status text:', openAIResponse.statusText);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'OpenAI API error', 
+          status: openAIResponse.status,
+          details: errorJson || errorText
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
     const openAIData = await openAIResponse.json()
     
     if (openAIData.error) {

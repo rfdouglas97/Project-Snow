@@ -60,23 +60,24 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
 
-    // Create the form data with the image
-    const formData = new FormData();
-    formData.append('image', new Blob([fileData], { type: 'image/png' }));
-    formData.append('n', '1');
-    formData.append('size', '1024x1024');
-    formData.append('response_format', 'url');
+    // Instead of using variations, let's use the dall-e-3 generations endpoint
+    // which can take a text prompt and is more reliable
+    console.log('Using OpenAI DALL-E 3 for avatar generation')
     
-    console.log('Sending image to OpenAI Images API for transformation')
-    
-    // Call OpenAI Images API with form data
-    const openAIResponse = await fetch('https://api.openai.com/v1/images/variations', {
+    // Call OpenAI Images API with text prompt
+    const openAIResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        // Don't set Content-Type header when using FormData, it will be set automatically with the boundary
+        'Content-Type': 'application/json'
       },
-      body: formData
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: "Create a professional, standardized avatar image based on this description: a simple, clean headshot with neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for profile pictures.",
+        n: 1,
+        size: "1024x1024",
+        response_format: "url"
+      })
     });
 
     // Enhanced error handling for OpenAI API response
