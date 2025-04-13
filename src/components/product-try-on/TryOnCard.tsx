@@ -1,9 +1,9 @@
 
 import { X } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TryOnImage } from "./TryOnImage";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { TryOnLoading } from "./TryOnLoading";
+import { TryOnImage } from "./TryOnImage";
 import { TryOnActions } from "./TryOnActions";
 
 interface TryOnCardProps {
@@ -13,7 +13,7 @@ interface TryOnCardProps {
   onClose: () => void;
   onSave: () => void;
   onShare: () => void;
-  onAddToCart?: () => void;
+  onRegenerate?: () => void;
 }
 
 export function TryOnCard({
@@ -23,7 +23,7 @@ export function TryOnCard({
   onClose,
   onSave,
   onShare,
-  onAddToCart = () => {}
+  onRegenerate
 }: TryOnCardProps) {
   return (
     <Card className="w-full shadow-lg">
@@ -44,8 +44,8 @@ export function TryOnCard({
         ) : (
           <TryOnImage 
             imageUrl={tryOnImage} 
-            productName={productName}
-            isLoading={isLoading}
+            productName={productName} 
+            isLoading={isLoading} 
           />
         )}
       </CardContent>
@@ -53,7 +53,7 @@ export function TryOnCard({
         <TryOnActions
           onSave={onSave}
           onShare={onShare}
-          onAddToCart={onAddToCart}
+          onRegenerate={onRegenerate}
           disabled={!tryOnImage || isLoading}
         />
       </CardFooter>

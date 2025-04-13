@@ -1,15 +1,15 @@
 
-import { Save, Share2, ShoppingCart } from "lucide-react";
+import { Save, Share2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface TryOnActionsProps {
   onSave: () => void;
   onShare: () => void;
-  onAddToCart: () => void;
+  onRegenerate?: () => void;
   disabled: boolean;
 }
 
-export function TryOnActions({ onSave, onShare, onAddToCart, disabled }: TryOnActionsProps) {
+export function TryOnActions({ onSave, onShare, onRegenerate, disabled }: TryOnActionsProps) {
   return (
     <div className="flex justify-between pt-2">
       <div className="flex gap-2">
@@ -34,15 +34,17 @@ export function TryOnActions({ onSave, onShare, onAddToCart, disabled }: TryOnAc
           Share
         </Button>
       </div>
-      <Button 
-        size="sm"
-        onClick={onAddToCart}
-        disabled={disabled}
-        className="bg-gradient-primary hover:shadow-md transition-shadow duration-300"
-      >
-        <ShoppingCart className="h-4 w-4 mr-1" />
-        Add to Cart
-      </Button>
+      {onRegenerate && (
+        <Button 
+          size="sm"
+          onClick={onRegenerate}
+          disabled={disabled}
+          className="bg-gradient-primary hover:shadow-md transition-shadow duration-300"
+        >
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Regenerate
+        </Button>
+      )}
     </div>
   );
 }

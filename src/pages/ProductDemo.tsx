@@ -1,7 +1,5 @@
 
-import { Button } from "@/components/ui/button";
 import { ProductTryOn } from "@/components/product-try-on/ProductTryOn";
-import { toast } from "@/components/ui/use-toast";
 
 const ProductDemo = () => {
   const productData = [
@@ -21,13 +19,6 @@ const ProductDemo = () => {
     }
   ];
 
-  const handleAddToCart = (productName: string) => {
-    toast({
-      title: "Added to cart",
-      description: `${productName} has been added to your cart.`,
-    });
-  };
-
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
@@ -36,7 +27,7 @@ const ProductDemo = () => {
             Try on with <span className="text-transparent bg-clip-text bg-gradient-primary">Mira</span>
           </h1>
           <p className="mt-5 max-w-xl mx-auto text-xl text-mira-text/80">
-            Let your customers try before they buy
+            See how these products look on you before you buy
           </p>
         </div>
 
@@ -56,20 +47,12 @@ const ProductDemo = () => {
                   <p className="text-xl font-semibold text-mira-purple">{product.price}</p>
                 </div>
                 <p className="mt-2 text-mira-text/80">{product.description}</p>
-                <div className="mt-4 space-y-3">
-                  <Button 
-                    className="w-full bg-mira-purple hover:bg-mira-purple/90 text-white" 
-                    onClick={() => handleAddToCart(product.name)}
-                  >
-                    Add to Cart
-                  </Button>
-                  
+                <div className="mt-4">
                   <ProductTryOn
                     productId={product.id}
                     productName={product.name}
                     productImageUrl={product.imageUrl}
                     price={product.price}
-                    onAddToCart={() => handleAddToCart(product.name)}
                   />
                 </div>
               </div>

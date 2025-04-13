@@ -11,15 +11,13 @@ interface ProductTryOnProps {
   productName: string;
   productImageUrl: string;
   price: string;
-  onAddToCart?: () => void;
 }
 
 export function ProductTryOn({
   productId,
   productName,
   productImageUrl,
-  price,
-  onAddToCart
+  price
 }: ProductTryOnProps) {
   const { toast } = useToast();
   const [showTryOn, setShowTryOn] = useState(false);
@@ -113,7 +111,6 @@ export function ProductTryOn({
           onClose={handleClose}
           onSave={handleSave}
           onShare={handleShare}
-          onAddToCart={onAddToCart}
         />
       )}
     </div>
