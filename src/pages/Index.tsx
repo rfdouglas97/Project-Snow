@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,12 +43,12 @@ const Index = () => {
             Virtual Try-On with <span className="text-transparent bg-clip-text bg-gradient-primary">Mira</span>
           </h1>
           <p className="mt-5 max-w-xl mx-auto text-xl text-mira-text/80">
-            Try before you buy with our innovative virtual mirror technology
+            Let your customers try before they buy
           </p>
           <div className="mt-8">
             <Link to="/products">
               <Button size="lg" className="bg-gradient-primary rounded-full px-8 py-6 text-lg font-medium hover:shadow-lg transition-shadow duration-300">
-                Try on Products
+                Try on with Mira
               </Button>
             </Link>
           </div>

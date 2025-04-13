@@ -28,10 +28,10 @@ export const Navbar = () => {
             Products
           </Link>
           <Link 
-            to="/" 
+            to="/products" 
             className="btn-gradient px-4 py-2 rounded-full font-medium"
           >
-            Try Mira Now
+            Try on with Mira
           </Link>
         </nav>
       </div>
