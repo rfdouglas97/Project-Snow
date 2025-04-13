@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,19 +35,19 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
-            Flask + Supabase
+          <h1 className="text-4xl font-bold text-mira-text font-heading sm:text-5xl lg:text-6xl">
+            Virtual Try-On with <span className="text-transparent bg-clip-text bg-gradient-primary">Mira</span>
           </h1>
-          <p className="mt-5 max-w-xl mx-auto text-xl text-gray-500">
-            A modern OAuth authentication system with secure image storage
+          <p className="mt-5 max-w-xl mx-auto text-xl text-mira-text/80">
+            Try before you buy with our innovative virtual mirror technology
           </p>
-          <div className="mt-6">
+          <div className="mt-8">
             <Link to="/products">
-              <Button size="lg" className="mx-2">
-                Try on Products Demo
+              <Button size="lg" className="bg-gradient-primary rounded-full px-8 py-6 text-lg font-medium hover:shadow-lg transition-shadow duration-300">
+                Try on Products
               </Button>
             </Link>
           </div>
@@ -56,32 +55,32 @@ const Index = () => {
 
         {user && (
           <div className="mb-8 flex flex-col items-center justify-center">
-            <Avatar className="h-20 w-20 mb-4">
+            <Avatar className="h-20 w-20 mb-4 border-2 border-mira-purple">
               {user.user_metadata.avatar_url ? (
                 <AvatarImage src={user.user_metadata.avatar_url} alt={user.user_metadata.full_name || "User"} />
               ) : (
-                <AvatarFallback>{user.email?.substring(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback className="bg-mira-purple text-white">{user.email?.substring(0, 2).toUpperCase()}</AvatarFallback>
               )}
             </Avatar>
-            <h2 className="text-2xl font-bold">Welcome, {user.user_metadata.full_name || user.email}</h2>
-            <Button onClick={handleSignOut} variant="outline" className="mt-2">
+            <h2 className="text-2xl font-bold font-heading text-mira-text">Welcome, {user.user_metadata.full_name || user.email}</h2>
+            <Button onClick={handleSignOut} variant="outline" className="mt-2 border-mira-purple/30 text-mira-purple hover:bg-mira-purple/10">
               Sign Out
             </Button>
           </div>
         )}
 
         <Tabs defaultValue="auth" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="auth">Authentication</TabsTrigger>
-            <TabsTrigger value="storage">File Storage</TabsTrigger>
-            <TabsTrigger value="avatar">Avatar Generator</TabsTrigger>
-            <TabsTrigger value="api">API Testing</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 rounded-full p-1 bg-white">
+            <TabsTrigger value="auth" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Authentication</TabsTrigger>
+            <TabsTrigger value="storage" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">File Storage</TabsTrigger>
+            <TabsTrigger value="avatar" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Avatar Generator</TabsTrigger>
+            <TabsTrigger value="api" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">API Testing</TabsTrigger>
           </TabsList>
           
           <TabsContent value="auth" className="mt-6">
-            <Card>
+            <Card className="border-none shadow-md">
               <CardHeader>
-                <CardTitle>OAuth Authentication</CardTitle>
+                <CardTitle className="text-mira-text font-heading">OAuth Authentication</CardTitle>
                 <CardDescription>
                   {user 
                     ? "You are currently signed in." 
@@ -92,7 +91,7 @@ const Index = () => {
                 {user ? (
                   <div className="text-center">
                     <p>Signed in as: {user.email}</p>
-                    <Button onClick={handleSignOut} className="mt-4">
+                    <Button onClick={handleSignOut} className="mt-4 bg-mira-purple hover:bg-mira-purple/90">
                       Sign Out
                     </Button>
                   </div>
@@ -101,7 +100,7 @@ const Index = () => {
                 )}
               </CardContent>
               <CardFooter className="flex justify-between">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-mira-text/60">
                   Securely handled through Supabase Auth
                 </p>
               </CardFooter>
@@ -109,9 +108,9 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="storage" className="mt-6">
-            <Card>
+            <Card className="border-none shadow-md">
               <CardHeader>
-                <CardTitle>Secure File Upload</CardTitle>
+                <CardTitle className="text-mira-text font-heading">Secure File Upload</CardTitle>
                 <CardDescription>
                   Upload images to Supabase Storage
                 </CardDescription>
@@ -120,7 +119,7 @@ const Index = () => {
                 <FileUpload />
               </CardContent>
               <CardFooter>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-mira-text/60">
                   Files are stored securely in your Supabase bucket
                 </p>
               </CardFooter>
@@ -128,9 +127,9 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="avatar" className="mt-6">
-            <Card>
+            <Card className="border-none shadow-md">
               <CardHeader>
-                <CardTitle>Avatar Generator</CardTitle>
+                <CardTitle className="text-mira-text font-heading">Avatar Generator</CardTitle>
                 <CardDescription>
                   Create a personalized avatar using AI
                 </CardDescription>
@@ -139,7 +138,7 @@ const Index = () => {
                 <AvatarGenerator />
               </CardContent>
               <CardFooter>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-mira-text/60">
                   Powered by OpenAI and Supabase Edge Functions
                 </p>
               </CardFooter>
@@ -147,9 +146,9 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="api" className="mt-6">
-            <Card>
+            <Card className="border-none shadow-md">
               <CardHeader>
-                <CardTitle>Flask API Testing</CardTitle>
+                <CardTitle className="text-mira-text font-heading">Flask API Testing</CardTitle>
                 <CardDescription>
                   Test the Flask backend endpoints
                 </CardDescription>
@@ -158,7 +157,7 @@ const Index = () => {
                 <ApiDemo />
               </CardContent>
               <CardFooter>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-mira-text/60">
                   Endpoints are protected by authentication
                 </p>
               </CardFooter>
@@ -166,40 +165,40 @@ const Index = () => {
           </TabsContent>
         </Tabs>
         
-        <div className="mt-12 bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="mt-12 bg-white shadow-md rounded-lg overflow-hidden">
           <div className="px-4 py-5 sm:px-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
+            <h3 className="text-lg leading-6 font-medium text-mira-text font-heading">
               Backend Documentation
             </h3>
-            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+            <p className="mt-1 max-w-2xl text-sm text-mira-text/70">
               Key endpoints and configuration details
             </p>
           </div>
           <div className="border-t border-gray-200 px-4 py-5 sm:p-0">
             <dl className="sm:divide-y sm:divide-gray-200">
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Authentication</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  <code className="px-2 py-1 bg-gray-100 rounded">/api/auth/google</code>,{" "}
-                  <code className="px-2 py-1 bg-gray-100 rounded">/api/auth/apple</code>
+                <dt className="text-sm font-medium text-mira-text/70">Authentication</dt>
+                <dd className="mt-1 text-sm text-mira-text sm:mt-0 sm:col-span-2">
+                  <code className="px-2 py-1 bg-mira-background rounded">/api/auth/google</code>,{" "}
+                  <code className="px-2 py-1 bg-mira-background rounded">/api/auth/apple</code>
                 </dd>
               </div>
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">File Upload</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  <code className="px-2 py-1 bg-gray-100 rounded">/api/storage/upload</code>
+                <dt className="text-sm font-medium text-mira-text/70">File Upload</dt>
+                <dd className="mt-1 text-sm text-mira-text sm:mt-0 sm:col-span-2">
+                  <code className="px-2 py-1 bg-mira-background rounded">/api/storage/upload</code>
                 </dd>
               </div>
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Avatar Generation</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  <code className="px-2 py-1 bg-gray-100 rounded">/functions/generate-avatar</code>
+                <dt className="text-sm font-medium text-mira-text/70">Avatar Generation</dt>
+                <dd className="mt-1 text-sm text-mira-text sm:mt-0 sm:col-span-2">
+                  <code className="px-2 py-1 bg-mira-background rounded">/functions/generate-avatar</code>
                 </dd>
               </div>
               <div className="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">File Retrieval</dt>
-                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  <code className="px-2 py-1 bg-gray-100 rounded">/api/storage/files</code>
+                <dt className="text-sm font-medium text-mira-text/70">File Retrieval</dt>
+                <dd className="mt-1 text-sm text-mira-text sm:mt-0 sm:col-span-2">
+                  <code className="px-2 py-1 bg-mira-background rounded">/api/storage/files</code>
                 </dd>
               </div>
             </dl>

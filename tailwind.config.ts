@@ -63,13 +63,20 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Adding custom colors for our app
-				brand: {
-					blue: '#3b82f6',
-					teal: '#14b8a6',
-					darkBlue: '#1e40af',
-					lightBlue: '#93c5fd'
+				// Mira brand colors
+				mira: {
+					purple: '#6A1CF8',
+					pink: '#D63AFF',
+					background: '#F5F0E8',
+					text: '#121212',
 				}
+			},
+			fontFamily: {
+				'sans': ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				'heading': ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+			},
+			backgroundImage: {
+				'gradient-primary': 'linear-gradient(90deg, #6A1CF8 0%, #D63AFF 100%)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

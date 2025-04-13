@@ -18,6 +18,7 @@ export function TryOnActions({ onSave, onShare, onAddToCart, disabled }: TryOnAc
           size="sm"
           onClick={onSave}
           disabled={disabled}
+          className="border-mira-purple/30 text-mira-purple hover:bg-mira-purple/10"
         >
           <Save className="h-4 w-4 mr-1" />
           Save
@@ -27,6 +28,7 @@ export function TryOnActions({ onSave, onShare, onAddToCart, disabled }: TryOnAc
           size="sm"
           onClick={onShare}
           disabled={disabled}
+          className="border-mira-purple/30 text-mira-purple hover:bg-mira-purple/10"
         >
           <Share2 className="h-4 w-4 mr-1" />
           Share
@@ -36,6 +38,7 @@ export function TryOnActions({ onSave, onShare, onAddToCart, disabled }: TryOnAc
         size="sm"
         onClick={onAddToCart}
         disabled={disabled}
+        className="bg-gradient-primary hover:shadow-md transition-shadow duration-300"
       >
         <ShoppingCart className="h-4 w-4 mr-1" />
         Add to Cart

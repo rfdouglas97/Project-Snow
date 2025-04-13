@@ -29,14 +29,14 @@ const ProductDemo = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
-            Product Demo
+          <h1 className="text-4xl font-bold text-mira-text font-heading sm:text-5xl lg:text-6xl">
+            Try on products with <span className="text-transparent bg-clip-text bg-gradient-primary">Mira</span>
           </h1>
-          <p className="mt-5 max-w-xl mx-auto text-xl text-gray-500">
-            Try on products virtually before you buy
+          <p className="mt-5 max-w-xl mx-auto text-xl text-mira-text/80">
+            See how clothes look on you before you buy
           </p>
         </div>
 
@@ -52,13 +52,13 @@ const ProductDemo = () => {
               </div>
               <div className="p-6">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-gray-900">{product.name}</h2>
-                  <p className="text-xl font-semibold text-gray-900">{product.price}</p>
+                  <h2 className="text-2xl font-bold text-mira-text font-heading">{product.name}</h2>
+                  <p className="text-xl font-semibold text-mira-purple">{product.price}</p>
                 </div>
-                <p className="mt-2 text-gray-600">{product.description}</p>
+                <p className="mt-2 text-mira-text/80">{product.description}</p>
                 <div className="mt-4 space-y-3">
                   <Button 
-                    className="w-full" 
+                    className="w-full bg-mira-purple hover:bg-mira-purple/90 text-white" 
                     onClick={() => handleAddToCart(product.name)}
                   >
                     Add to Cart

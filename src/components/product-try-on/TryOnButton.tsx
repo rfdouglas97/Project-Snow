@@ -10,8 +10,7 @@ export function TryOnButton({ onClick }: TryOnButtonProps) {
   return (
     <Button 
       onClick={onClick} 
-      variant="outline" 
-      className="w-full flex items-center justify-center gap-2 mt-2"
+      className="w-full flex items-center justify-center gap-2 mt-2 bg-gradient-primary hover:shadow-md transition-shadow duration-300"
     >
       <Image className="h-4 w-4" />
       Try it on with Mira
