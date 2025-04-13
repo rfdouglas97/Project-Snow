@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { VirtualTryOn } from "@/components/VirtualTryOn";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -73,7 +74,7 @@ const Index = () => {
         <Tabs defaultValue="auth" className="w-full">
           <TabsList className="grid w-full grid-cols-4 rounded-full p-1 bg-white">
             <TabsTrigger value="auth" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Authentication</TabsTrigger>
-            <TabsTrigger value="storage" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">File Storage</TabsTrigger>
+            <TabsTrigger value="storage" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Try on Products</TabsTrigger>
             <TabsTrigger value="avatar" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Avatar Generator</TabsTrigger>
             <TabsTrigger value="api" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">API Testing</TabsTrigger>
           </TabsList>
@@ -111,17 +112,17 @@ const Index = () => {
           <TabsContent value="storage" className="mt-6">
             <Card className="border-none shadow-md">
               <CardHeader>
-                <CardTitle className="text-mira-text font-heading">Secure File Upload</CardTitle>
+                <CardTitle className="text-mira-text font-heading">Try on Products</CardTitle>
                 <CardDescription>
-                  Upload images to Supabase Storage
+                  Upload clothing items or provide image URLs to try them on
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <FileUpload />
+                <VirtualTryOn />
               </CardContent>
               <CardFooter>
                 <p className="text-sm text-mira-text/60">
-                  Files are stored securely in your Supabase bucket
+                  Powered by GPT-4o and Supabase
                 </p>
               </CardFooter>
             </Card>

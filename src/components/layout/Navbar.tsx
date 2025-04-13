@@ -22,13 +22,13 @@ export const Navbar = () => {
             Home
           </Link>
           <Link 
-            to="/products" 
+            to="/demo" 
             className="text-mira-text hover:text-mira-purple font-medium transition-colors"
           >
             Demo
           </Link>
           <Link 
-            to="/products" 
+            to="/demo" 
             className="btn-gradient px-4 py-2 rounded-full font-medium"
           >
             Try on with Mira
