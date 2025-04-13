@@ -104,8 +104,12 @@ export function AvatarGenerator() {
         .getPublicUrl(fileName);
 
       console.log("File uploaded to:", publicUrl);
+      toast({
+        title: "Upload successful",
+        description: "Your photo has been uploaded. Now generating your standardized avatar...",
+      });
 
-      // Call edge function to generate avatar
+      // Call edge function to generate avatar with GPT-4o
       setIsGenerating(true);
       const { data, error } = await supabase.functions.invoke('generate-avatar', {
         body: { 
@@ -127,7 +131,7 @@ export function AvatarGenerator() {
       
       toast({
         title: "Avatar generated",
-        description: "Your custom avatar has been created successfully",
+        description: "Your standardized avatar has been created with GPT-4o",
         variant: "default",
       });
     } catch (error) {
@@ -156,7 +160,7 @@ export function AvatarGenerator() {
       <CardHeader>
         <CardTitle>Create Your Avatar</CardTitle>
         <CardDescription>
-          Upload a photo and we'll generate a personalized avatar for you
+          Upload a photo and we'll generate a standardized avatar with GPT-4o
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -201,13 +205,13 @@ export function AvatarGenerator() {
             {isGenerating && (
               <div className="flex flex-col items-center justify-center py-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                <p className="text-sm text-center">Generating your avatar...</p>
+                <p className="text-sm text-center">GPT-4o is generating your standardized avatar...</p>
               </div>
             )}
           </>
         ) : (
           <div className="space-y-4">
-            <div className="text-center font-medium">Your Generated Avatar</div>
+            <div className="text-center font-medium">Your Standardized Avatar</div>
             <div className="flex justify-center">
               {generatedAvatarUrl ? (
                 <Avatar className="h-40 w-40">
@@ -219,6 +223,9 @@ export function AvatarGenerator() {
               ) : (
                 <Skeleton className="h-40 w-40 rounded-full" />
               )}
+            </div>
+            <div className="text-center text-sm text-muted-foreground">
+              Your avatar has been standardized with plain white clothing and a neutral background
             </div>
           </div>
         )}
@@ -233,12 +240,12 @@ export function AvatarGenerator() {
             {isUploading || isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {isUploading ? "Uploading..." : "Generating..."}
+                {isUploading ? "Uploading..." : "Generating with GPT-4o..."}
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                Generate Avatar
+                Create Standardized Avatar
               </>
             )}
           </Button>

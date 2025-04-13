@@ -24,7 +24,40 @@ export function useAvatarFetching() {
         return false;
       }
 
-      // User folder path in storage
+      // First try to get the latest avatar from the database
+      const { data: avatarData, error: avatarError } = await supabase
+        .from('user_avatars')
+        .select('avatar_image_path')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (avatarError) {
+        console.error("Database error:", avatarError);
+        throw avatarError;
+      }
+
+      if (avatarData?.avatar_image_path) {
+        console.log("Found avatar path in database:", avatarData.avatar_image_path);
+        
+        // Path format in DB is 'avatars/user-{userId}/{filename}.png'
+        const pathParts = avatarData.avatar_image_path.split('/');
+        const bucketName = pathParts[0];
+        const avatarPath = pathParts.slice(1).join('/');
+        
+        // Get public URL of the avatar
+        const { data: { publicUrl } } = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(avatarPath);
+
+        console.log("Retrieved avatar URL:", publicUrl);
+        setUserAvatar(publicUrl);
+        setIsLoading(false);
+        return true;
+      }
+
+      // Fallback to directly checking storage if no database record found
       const userFolder = `user-${user.id}`;
       
       // Get user's latest avatar from storage
