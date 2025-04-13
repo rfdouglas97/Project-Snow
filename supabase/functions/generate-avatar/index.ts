@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -78,7 +77,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are an expert in image generation and transformation. Generate realistic images in response to users' requests."
+            content: "You are an expert in image generation and transformation. Generate realistic images in response to users' requests. Return your response in JSON format with an image_url field."
           },
           {
             role: "user",
@@ -95,7 +94,9 @@ Change their clothing explicitly to neutral-colored clothing (white or grey), ma
 
 Keep the overall style completely realistic—do NOT cartoonify or stylize.
 
-Ensure a full-body view is clearly visible, showing from head to toe.`
+Ensure a full-body view is clearly visible, showing from head to toe.
+
+Return your response in JSON format with an image_url field containing the URL to the generated image.`
               },
               {
                 type: "image_url",
@@ -125,8 +126,16 @@ Ensure a full-body view is clearly visible, showing from head to toe.`
     let generatedImageUrl = null
     try {
       // The response should be JSON since we specified response_format as json_object
-      const parsedContent = JSON.parse(openAIData.choices[0].message.content)
-      generatedImageUrl = parsedContent.image_url
+      const parsedContent = openAIData.choices[0].message.content
+      
+      // If the content is already parsed as JSON, use it directly
+      if (typeof parsedContent === 'object') {
+        generatedImageUrl = parsedContent.image_url
+      } else {
+        // Otherwise parse it as JSON
+        const jsonContent = JSON.parse(parsedContent)
+        generatedImageUrl = jsonContent.image_url
+      }
       
       if (!generatedImageUrl) {
         throw new Error('No image URL found in GPT-4o response')
