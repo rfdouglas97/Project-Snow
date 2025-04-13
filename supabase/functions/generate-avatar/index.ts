@@ -60,26 +60,24 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
 
-    // Convert the image to base64 for OpenAI API
-    const arrayBuffer = await fileData.arrayBuffer()
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    // Create the form data with the image
+    const formData = new FormData();
+    formData.append('image', new Blob([fileData], { type: 'image/png' }));
+    formData.append('n', '1');
+    formData.append('size', '1024x1024');
+    formData.append('response_format', 'url');
     
     console.log('Sending image to OpenAI Images API for transformation')
     
-    // Call OpenAI Images API correctly with the image as input
+    // Call OpenAI Images API with form data
     const openAIResponse = await fetch('https://api.openai.com/v1/images/variations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json'
+        // Don't set Content-Type header when using FormData, it will be set automatically with the boundary
       },
-      body: JSON.stringify({
-        image: `data:image/png;base64,${base64Image}`,
-        n: 1,
-        size: "1024x1024",
-        response_format: "url"
-      })
-    })
+      body: formData
+    });
 
     // Enhanced error handling for OpenAI API response
     if (!openAIResponse.ok) {
