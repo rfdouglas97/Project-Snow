@@ -1,14 +1,13 @@
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Loader2, Check, RefreshCw } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { UploadForm } from "./avatar/UploadForm";
+import { ImagePreview } from "./avatar/ImagePreview";
+import { ProgressIndicator } from "./avatar/ProgressIndicator";
+import { GeneratedAvatar } from "./avatar/GeneratedAvatar";
 
 export function AvatarGenerator() {
   const { toast } = useToast();
@@ -20,8 +19,7 @@ export function AvatarGenerator() {
   const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
+  const handleFileChange = (selectedFile: File | null) => {
     setFile(selectedFile);
     
     if (selectedFile) {
@@ -166,102 +164,30 @@ export function AvatarGenerator() {
       <CardContent className="space-y-6">
         {!isCompleted ? (
           <>
-            <div className="grid w-full max-w-sm items-center gap-1.5">
-              <label htmlFor="avatar-image" className="text-sm font-medium leading-none">
-                Select Image
-              </label>
-              <Input
-                id="avatar-image"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="cursor-pointer"
-                disabled={isUploading || isGenerating}
-              />
-            </div>
+            <UploadForm 
+              isUploading={isUploading} 
+              isGenerating={isGenerating} 
+              onFileChange={handleFileChange} 
+              onUpload={handleUpload} 
+              file={file} 
+            />
             
-            {previewUrl && (
-              <div className="mt-4 relative">
-                <div className="rounded-md overflow-hidden border w-full h-64 flex items-center justify-center">
-                  <img 
-                    src={previewUrl} 
-                    alt="Preview" 
-                    className="object-contain max-h-full"
-                  />
-                </div>
-              </div>
-            )}
+            <ImagePreview previewUrl={previewUrl} />
             
-            {isUploading && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Uploading...</span>
-                  <span className="text-sm">{uploadProgress}%</span>
-                </div>
-                <Progress value={uploadProgress} className="h-2" />
-              </div>
-            )}
-            
-            {isGenerating && (
-              <div className="flex flex-col items-center justify-center py-4">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                <p className="text-sm text-center">GPT-4o is generating your standardized avatar...</p>
-              </div>
-            )}
+            <ProgressIndicator 
+              isUploading={isUploading} 
+              uploadProgress={uploadProgress} 
+              isGenerating={isGenerating} 
+            />
           </>
         ) : (
-          <div className="space-y-4">
-            <div className="text-center font-medium">Your Standardized Avatar</div>
-            <div className="flex justify-center">
-              {generatedAvatarUrl ? (
-                <Avatar className="h-40 w-40">
-                  <AvatarImage src={generatedAvatarUrl} alt="Generated Avatar" />
-                  <AvatarFallback>
-                    <Skeleton className="h-40 w-40 rounded-full" />
-                  </AvatarFallback>
-                </Avatar>
-              ) : (
-                <Skeleton className="h-40 w-40 rounded-full" />
-              )}
-            </div>
-            <div className="text-center text-sm text-muted-foreground">
-              Your avatar has been standardized with plain white clothing and a neutral background
-            </div>
-          </div>
+          <GeneratedAvatar 
+            isCompleted={isCompleted} 
+            generatedAvatarUrl={generatedAvatarUrl} 
+            onReset={resetForm} 
+          />
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
-        {!isCompleted ? (
-          <Button
-            onClick={handleUpload}
-            disabled={!file || isUploading || isGenerating}
-            className="w-full flex items-center justify-center gap-2"
-          >
-            {isUploading || isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {isUploading ? "Uploading..." : "Generating with GPT-4o..."}
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4" />
-                Create Standardized Avatar
-              </>
-            )}
-          </Button>
-        ) : (
-          <div className="w-full flex gap-2">
-            <Button variant="outline" onClick={resetForm} className="flex-1 gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Try Again
-            </Button>
-            <Button className="flex-1 gap-2">
-              <Check className="h-4 w-4" />
-              Save Avatar
-            </Button>
-          </div>
-        )}
-      </CardFooter>
     </Card>
   );
 }
