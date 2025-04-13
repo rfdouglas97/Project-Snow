@@ -6,6 +6,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { AuthButtons } from "@/components/AuthButtons";
 import { ApiDemo } from "@/components/ApiDemo";
 import { AvatarGenerator } from "@/components/AvatarGenerator";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   return (
@@ -18,6 +19,13 @@ const Index = () => {
           <p className="mt-5 max-w-xl mx-auto text-xl text-gray-500">
             A modern OAuth authentication system with secure image storage
           </p>
+          <div className="mt-6">
+            <Link to="/products">
+              <Button size="lg" className="mx-2">
+                Try on Products Demo
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <Tabs defaultValue="auth" className="w-full">
