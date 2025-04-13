@@ -16,6 +16,11 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
 
   const generateTryOn = async () => {
     if (!userAvatar) {
+      toast({
+        title: "Avatar required",
+        description: "Please create an avatar first",
+        variant: "destructive",
+      });
       return false;
     }
 
@@ -39,7 +44,13 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
       });
 
       if (error) {
-        throw error;
+        console.error("Edge function error:", error);
+        throw new Error(`Failed to call generation service: ${error.message}`);
+      }
+
+      if (data.error) {
+        console.error("Generation error:", data.error);
+        throw new Error(data.error);
       }
 
       // Set the try-on image URL
