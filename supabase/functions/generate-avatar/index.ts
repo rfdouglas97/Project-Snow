@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -77,7 +76,6 @@ serve(async (req) => {
 
     console.log('Calling Gemini API for image generation')
     
-    // Using the correct Gemini API format for image generation
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, 
       {
@@ -109,6 +107,22 @@ serve(async (req) => {
       }
     );
 
+    console.log('Gemini API raw response status:', geminiResponse.status);
+    console.log('Gemini API response headers:', Object.fromEntries(geminiResponse.headers.entries()));
+    
+    const geminiResponseText = await geminiResponse.text();
+    console.log('Complete Gemini API response text:', geminiResponseText);
+    
+    const geminiData = JSON.parse(geminiResponseText);
+    console.log('Parsed Gemini API response:', JSON.stringify(geminiData, null, 2));
+    
+    // More detailed logging for image extraction
+    console.log('Number of candidates:', geminiData.candidates?.length);
+    if (geminiData.candidates && geminiData.candidates.length > 0) {
+      const candidate = geminiData.candidates[0];
+      console.log('Candidate content parts:', candidate.content?.parts);
+    }
+    
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
       console.error('Gemini API error response:', errorText);
@@ -116,10 +130,6 @@ serve(async (req) => {
       throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
     }
     
-    const geminiData = await geminiResponse.json();
-    console.log('Gemini API response received');
-    
-    // Extract image data from Gemini response
     let generatedImageBase64 = null;
     
     if (geminiData.candidates && geminiData.candidates.length > 0) {
@@ -201,7 +211,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Avatar generation error:', error);
+    console.error('Detailed error during avatar generation:', error);
     
     // If something fails during Gemini image generation, we'll fall back to the original image
     try {
