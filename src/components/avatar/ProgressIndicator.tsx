@@ -7,7 +7,6 @@ interface ProgressIndicatorProps {
   isUploading: boolean;
   uploadProgress: number;
   isGenerating: boolean;
-  isResizing?: boolean;
   error?: string | null;
 }
 
@@ -15,10 +14,9 @@ export function ProgressIndicator({
   isUploading, 
   uploadProgress, 
   isGenerating,
-  isResizing,
   error 
 }: ProgressIndicatorProps) {
-  if (!isUploading && !isGenerating && !isResizing && !error) return null;
+  if (!isUploading && !isGenerating && !error) return null;
   
   return (
     <div className="space-y-4">
@@ -39,14 +37,6 @@ export function ProgressIndicator({
             <span className="text-sm">{uploadProgress}%</span>
           </div>
           <Progress value={uploadProgress} className="h-2" />
-        </div>
-      )}
-      
-      {isResizing && (
-        <div className="flex flex-col items-center justify-center py-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-          <p className="text-sm text-center">Resizing image to meet AI requirements...</p>
-          <p className="text-xs text-center text-muted-foreground mt-1">This may take a few seconds</p>
         </div>
       )}
       

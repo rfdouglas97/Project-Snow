@@ -43,7 +43,8 @@ export function ProductTryOn({
     }
 
     setShowTryOn(true);
-    generateTryOn();
+    // Using Gemini by default, can be easily switched to 'openai'
+    generateTryOn({ model: 'gemini' });
   };
 
   const handleSave = () => {
@@ -96,7 +97,7 @@ export function ProductTryOn({
 
   const handleRegenerate = async () => {
     setTryOnImage(null);
-    generateTryOn();
+    generateTryOn({ model: 'gemini' });
   };
 
   const handleClose = () => {
@@ -120,7 +121,7 @@ export function ProductTryOn({
           onSave={handleSave}
           onShare={handleShare}
           onRegenerate={handleRegenerate}
-          modelName="Stability AI"
+          modelName="Gemini"
         />
       )}
     </div>

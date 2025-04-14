@@ -10,6 +10,7 @@ interface TryOnGenerationProps {
 }
 
 interface GenerationOptions {
+  model?: 'gemini' | 'openai';
   responseType?: 'image/png' | 'image/jpeg';
 }
 
@@ -18,7 +19,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const generateTryOn = async (options: GenerationOptions = { responseType: 'image/png' }) => {
+  const generateTryOn = async (options: GenerationOptions = { model: 'gemini', responseType: 'image/png' }) => {
     if (!userAvatar) {
       toast({
         title: "Avatar required",
@@ -38,19 +39,14 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         throw new Error("User not authenticated");
       }
 
-      console.log('Calling generate-try-on function with:', {
-        avatarUrl: userAvatar,
-        productImageUrl: productImageUrl,
-      });
-
       // Call the edge function to generate the try-on image
       const { data, error } = await supabase.functions.invoke('generate-try-on', {
         body: { 
           avatarUrl: userAvatar,
           productImageUrl: productImageUrl,
           userId: user.id,
-          responseType: options.responseType || 'image/png',
-          includeImageResponse: true
+          model: options.model,
+          responseType: options.responseType || 'image/png'
         }
       });
 
@@ -63,8 +59,6 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         console.error("Generation error:", data.error);
         throw new Error(data.error);
       }
-
-      console.log('Try-on generation successful:', data);
 
       // Set the try-on image URL
       setTryOnImage(data.tryOnImageUrl);

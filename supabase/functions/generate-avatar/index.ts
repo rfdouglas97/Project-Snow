@@ -1,131 +1,294 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const MAX_PIXELS = 1048576;
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     )
 
-    const { imageUrl, userId } = await req.json()
+    // Parse request body
+    const { imageUrl, userId, responseType = 'image/png' } = await req.json()
+
     if (!imageUrl || !userId) {
-      return new Response(JSON.stringify({ error: 'Missing imageUrl or userId' }), {
-        status: 400, headers: corsHeaders
+      return new Response(
+        JSON.stringify({ error: 'Missing imageUrl or userId' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('Processing avatar generation for user:', userId)
+    console.log('Image URL:', imageUrl)
+    console.log('Response type requested:', responseType)
+
+    // Extract path from the imageUrl
+    const urlParts = imageUrl.split('/storage/v1/object/public/')
+    if (urlParts.length < 2) {
+      throw new Error('Invalid image URL format')
+    }
+    
+    const pathParts = urlParts[1].split('/')
+    const bucketName = pathParts[0]
+    const imagePath = pathParts.slice(1).join('/')
+    
+    console.log('Extracted bucket name:', bucketName)
+    console.log('Extracted image path:', imagePath)
+
+    // Download the original image
+    const { data: fileData, error: downloadError } = await supabase
+      .storage
+      .from(bucketName)
+      .download(imagePath)
+    
+    if (downloadError) {
+      console.error('Error downloading file:', downloadError)
+      throw downloadError
+    }
+    
+    console.log('Original file downloaded successfully')
+    
+    // Convert the file to base64 for sending to Gemini
+    const imageBuffer = await fileData.arrayBuffer()
+    const bytes = new Uint8Array(imageBuffer)
+    const binary = Array.from(bytes).map(byte => String.fromCharCode(byte)).join('')
+    const imageBase64 = btoa(binary)
+    
+    console.log('Image converted to base64')
+
+    // Call Gemini API to generate avatar
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
+    if (!GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not set')
+    }
+
+    console.log('Calling Gemini API for image generation')
+    
+    // Using the correct Gemini API format for image generation
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, 
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: "Create a standardized avatar of this person's full body against a neutral background. Keep the same facial features but standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe."
+              },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageBase64
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.0,
+            topK: 1,
+            topP: 0,
+            maxOutputTokens: 8192
+          }
+        })
+      }
+    );
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error('Gemini API error response:', errorText);
+      console.error('Gemini API HTTP status:', geminiResponse.status);
+      throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
+    }
+    
+    const geminiData = await geminiResponse.json();
+    console.log('Gemini API response received');
+    
+    // Extract image data from Gemini response
+    let generatedImageBase64 = null;
+    
+    if (geminiData.candidates && geminiData.candidates.length > 0) {
+      const candidate = geminiData.candidates[0];
+      if (candidate.content && candidate.content.parts) {
+        for (const part of candidate.content.parts) {
+          // Check for inlineData which contains the image
+          if (part.inlineData) {
+            generatedImageBase64 = part.inlineData.data;
+            console.log('Found image in Gemini response with mime type:', part.inlineData.mimeType);
+            break;
+          }
+        }
+      }
+    }
+    
+    if (!generatedImageBase64) {
+      console.error('No image found in Gemini response:', JSON.stringify(geminiData));
+      throw new Error('No image generated by Gemini');
+    }
+
+    // Convert base64 to blob for upload
+    const binaryData = atob(generatedImageBase64);
+    const array = new Uint8Array(binaryData.length);
+    for (let i = 0; i < binaryData.length; i++) {
+      array[i] = binaryData.charCodeAt(i);
+    }
+    const imageBlob = new Blob([array], { type: responseType });
+    
+    // Define paths for storing the avatar
+    const userFolder = `user-${userId}`;
+    const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
+    const avatarPath = `${userFolder}/${avatarFileName}`;
+    
+    // Upload the generated image to the avatars bucket
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('avatars')
+      .upload(avatarPath, imageBlob, {
+        contentType: responseType,
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Error uploading avatar:', uploadError);
+      throw uploadError;
+    }
+
+    console.log('Avatar uploaded successfully');
+
+    // Get the public URL for the uploaded avatar
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(avatarPath);
+
+    // Store metadata in user_avatars table
+    const { data: metadataData, error: metadataError } = await supabase
+      .from('user_avatars')
+      .insert({
+        user_id: userId,
+        original_image_path: `${bucketName}/${imagePath}`,
+        avatar_image_path: `avatars/${avatarPath}`
       })
+      .select();
+
+    if (metadataError) {
+      console.error('Error storing avatar metadata:', metadataError);
+      throw metadataError;
     }
 
-    const [_, path] = imageUrl.split('/storage/v1/object/public/')
-    const [bucket, ...rest] = path.split('/')
-    const filePath = rest.join('/')
+    console.log('Avatar metadata stored successfully');
+    console.log('Avatar stored at:', publicUrl);
 
-    const { data: fileData, error: downloadError } = await supabase.storage.from(bucket).download(filePath)
-    if (downloadError) throw new Error('Failed to download original image')
-
-    const imageBlob = new Blob([fileData], { type: 'image/png' })
-
-    // Resize if too large
-    const dimensions = await getImageMetadata(imageBlob)
-    const pixelCount = dimensions.width * dimensions.height
-
-    let blobToSend = imageBlob
-    if (pixelCount > MAX_PIXELS) {
-      blobToSend = await resizeImageViaCDN(imageBlob, dimensions)
-    }
-
-    // Send to Stability AI
-    const result = await sendToStability(blobToSend)
-    if (!result.success) throw new Error(result.error)
-
-    // Upload result to Supabase
-    const fileName = `user-${userId}/${Date.now()}.png`
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, result.imageBlob, {
-      contentType: 'image/png', upsert: true
-    })
-    if (uploadError) throw uploadError
-
-    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
-
-    await supabase.from('user_avatars').insert({
-      user_id: userId,
-      original_image_path: `${bucket}/${filePath}`,
-      avatar_image_path: `avatars/${fileName}`,
-      is_ai_generated: true
-    })
-
-    return new Response(JSON.stringify({ avatarUrl: publicUrl }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return new Response(
+      JSON.stringify({ 
+        avatarUrl: publicUrl,
+        avatarId: metadataData?.[0]?.id
+      }), 
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500, headers: corsHeaders
-    })
+    console.error('Avatar generation error:', error);
+    
+    // If something fails during Gemini image generation, we'll fall back to the original image
+    try {
+      // Extract information from the error to determine if we should fall back
+      const shouldFallback = true; // We'll always fall back for now
+      
+      if (shouldFallback) {
+        console.log('Falling back to original image as avatar');
+        
+        // Try to parse the original request again to get imageUrl and userId
+        const { imageUrl, userId, responseType = 'image/png' } = await req.json();
+        
+        // Extract path from the imageUrl again
+        const urlParts = imageUrl.split('/storage/v1/object/public/');
+        const pathParts = urlParts[1].split('/');
+        const bucketName = pathParts[0];
+        const imagePath = pathParts.slice(1).join('/');
+        
+        // Download the original image
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') || '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+        );
+        
+        const { data: fileData } = await supabase
+          .storage
+          .from(bucketName)
+          .download(imagePath);
+        
+        if (!fileData) {
+          throw new Error('Failed to download original image for fallback');
+        }
+        
+        // Define paths for storing the avatar
+        const userFolder = `user-${userId}`;
+        const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
+        const avatarPath = `${userFolder}/${avatarFileName}`;
+        
+        // Upload the original image as avatar
+        const { error: uploadError } = await supabase
+          .storage
+          .from('avatars')
+          .upload(avatarPath, fileData, {
+            contentType: responseType,
+            upsert: true
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        // Get the public URL for the uploaded avatar
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(avatarPath);
+
+        // Store metadata in user_avatars table
+        const { data: metadataData, error: metadataError } = await supabase
+          .from('user_avatars')
+          .insert({
+            user_id: userId,
+            original_image_path: `${bucketName}/${imagePath}`,
+            avatar_image_path: `avatars/${avatarPath}`
+          })
+          .select();
+
+        if (metadataError) {
+          throw metadataError;
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            avatarUrl: publicUrl,
+            avatarId: metadataData?.[0]?.id,
+            note: "Using original image as avatar due to generation error"
+          }), 
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (fallbackError) {
+      console.error('Error in fallback logic:', fallbackError);
+    }
+    
+    // If we get here, both the main flow and fallback have failed
+    return new Response(
+      JSON.stringify({ error: error.message }), 
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
-})
-
-// --- Utilities ---
-
-async function getImageMetadata(blob: Blob) {
-  const buffer = await blob.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-
-  if (bytes[0] === 0x89 && bytes[1] === 0x50) {
-    // PNG
-    const width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19]
-    const height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23]
-    return { width, height }
-  }
-
-  return { width: 1500, height: 1500 }
-}
-
-async function resizeImageViaCDN(blob: Blob, { width, height }) {
-  const base64 = await blob.arrayBuffer().then(buf => btoa(String.fromCharCode(...new Uint8Array(buf))))
-  const resized = await fetch(`https://wsrv.nl/?url=data:${blob.type};base64,${base64}&w=1024&h=1024&fit=inside&output=png`)
-  return await resized.blob()
-}
-
-async function sendToStability(imageBlob: Blob) {
-  const STABILITY_API_KEY = Deno.env.get('STABILITY_API_KEY')
-  if (!STABILITY_API_KEY) return { success: false, error: "Missing Stability API Key" }
-
-  const form = new FormData()
-  const imageFile = new File([await imageBlob.arrayBuffer()], 'input.png', { type: 'image/png' })
-  form.append('init_image', imageFile)
-  form.append('text_prompts[0][text]', 'Remove the background, preserve facial features, and return a professional avatar on a plain white background.')
-  form.append('cfg_scale', '7')
-  form.append('clip_guidance_preset', 'FAST_BLUE')
-  form.append('samples', '1')
-  form.append('steps', '30')
-  form.append('style_preset', 'photographic')
-  form.append('image_strength', '0.6')
-
-  const res = await fetch('https://api.stability.ai/v1/generation/stable-image-core-1-0-b/image-to-image', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${STABILITY_API_KEY}` },
-    body: form
-  })
-
-  if (!res.ok) {
-    const errorText = await res.text()
-    return { success: false, error: errorText }
-  }
-
-  const json = await res.json()
-  const base64 = json.artifacts?.[0]?.base64
-  if (!base64) return { success: false, error: 'No image returned' }
-
-  const buffer = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
-  return { success: true, imageBlob: new Blob([buffer], { type: 'image/png' }) }
-}
+});
