@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -60,121 +61,68 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
     
-    // Convert the file to base64 for sending to Gemini
-    const imageBuffer = await fileData.arrayBuffer()
-    const bytes = new Uint8Array(imageBuffer)
-    const binary = Array.from(bytes).map(byte => String.fromCharCode(byte)).join('')
-    const imageBase64 = btoa(binary)
-    
-    console.log('Image converted to base64')
-
-    // Call Gemini API to generate avatar
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not set')
+    // Get Stability API key
+    const STABILITY_API_KEY = Deno.env.get('STABILITY_API_KEY')
+    if (!STABILITY_API_KEY) {
+      throw new Error('STABILITY_API_KEY is not set')
     }
 
-    console.log('Calling Gemini API for image generation')
+    // Send the image to Stability AI for processing
+    console.log('Calling Stability API for image generation')
     
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, 
+    const formData = new FormData()
+    formData.append('init_image', new Blob([fileData], { type: 'image/png' }))
+    formData.append('text_prompts[0][text]', 'based on the input photo, take the figure in the image, do not modify the face or body at all, and place the figure centered against a white / light grey background. Standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe.')
+    formData.append('text_prompts[0][weight]', '1')
+    formData.append('cfg_scale', '7')
+    formData.append('clip_guidance_preset', 'FAST_BLUE')
+    formData.append('samples', '1')
+    formData.append('steps', '30')
+    
+    const stabilityResponse = await fetch(
+      'https://api.stability.ai/v1/generation/stable-image-core-1-0-b/image-to-image', 
       {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${STABILITY_API_KEY}`,
         },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: "based on the input photo, take the figure in the image, do not modify the face or body at all, and place the figure centered against a white / light grey background. Standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe. You should return an image"
-              },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: imageBase64
-                }
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.0,
-            topK: 1,
-            topP: 0,
-            maxOutputTokens: 8192
-          }
-        })
+        body: formData
       }
-    );
+    )
 
-    console.log('Gemini API raw response status:', geminiResponse.status);
-    console.log('Gemini API response headers:', Object.fromEntries(geminiResponse.headers.entries()));
+    console.log('Stability API raw response status:', stabilityResponse.status)
+    console.log('Stability API response headers:', Object.fromEntries(stabilityResponse.headers.entries()))
     
-    const geminiResponseText = await geminiResponse.text();
-    console.log('Complete Gemini API response text:', geminiResponseText);
-    
-    const geminiData = JSON.parse(geminiResponseText);
-    console.log('Parsed Gemini API response:', JSON.stringify(geminiData, null, 2));
-    
-    // More detailed logging for image extraction
-    console.log('Number of candidates:', geminiData.candidates?.length);
-    if (geminiData.candidates && geminiData.candidates.length > 0) {
-      const candidate = geminiData.candidates[0];
-      console.log('Candidate content parts:', candidate.content?.parts);
+    if (!stabilityResponse.ok) {
+      const errorText = await stabilityResponse.text()
+      console.error('Stability API error response:', errorText)
+      console.error('Stability API HTTP status:', stabilityResponse.status)
+      throw new Error(`Stability API error: ${stabilityResponse.status} - ${errorText}`)
     }
     
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error('Gemini API error response:', errorText);
-      console.error('Gemini API HTTP status:', geminiResponse.status);
-      throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
+    const stabilityData = await stabilityResponse.json()
+    console.log('Stability API response:', JSON.stringify(stabilityData, null, 2))
+    
+    if (!stabilityData.artifacts || stabilityData.artifacts.length === 0) {
+      console.error('No images generated by Stability AI')
+      throw new Error('No images generated by Stability AI')
     }
     
-    let generatedImageBase64 = null;
+    // Get the generated image
+    const generatedImageBase64 = stabilityData.artifacts[0].base64
     
-    if (geminiData.candidates && geminiData.candidates.length > 0) {
-      const candidate = geminiData.candidates[0];
-      
-      if (candidate.content && candidate.content.parts) {
-        console.log('Total parts in candidate:', candidate.content.parts.length);
-        
-        for (const part of candidate.content.parts) {
-          console.log('Part type:', Object.keys(part));
-          
-          // Look for image in inlineData
-          if (part.inlineData && part.inlineData.mimeType?.startsWith('image/')) {
-            generatedImageBase64 = part.inlineData.data;
-            console.log('Found image in inlineData with mime type:', part.inlineData.mimeType);
-            break;
-          }
-          
-          // Alternatively, look for image in any nested structure
-          if (part.image) {
-            generatedImageBase64 = part.image;
-            console.log('Found image in part.image');
-            break;
-          }
-        }
-      }
-    }
-    
-    if (!generatedImageBase64) {
-      console.error('No image found in Gemini response. Full response:', JSON.stringify(geminiData, null, 2));
-      throw new Error('No image generated by Gemini');
-    }
-
     // Convert base64 to blob for upload
-    const binaryData = atob(generatedImageBase64);
-    const array = new Uint8Array(binaryData.length);
+    const binaryData = atob(generatedImageBase64)
+    const array = new Uint8Array(binaryData.length)
     for (let i = 0; i < binaryData.length; i++) {
-      array[i] = binaryData.charCodeAt(i);
+      array[i] = binaryData.charCodeAt(i)
     }
-    const imageBlob = new Blob([array], { type: responseType });
+    const imageBlob = new Blob([array], { type: responseType })
     
     // Define paths for storing the avatar
-    const userFolder = `user-${userId}`;
-    const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
-    const avatarPath = `${userFolder}/${avatarFileName}`;
+    const userFolder = `user-${userId}`
+    const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`
+    const avatarPath = `${userFolder}/${avatarFileName}`
     
     // Upload the generated image to the avatars bucket
     const { data: uploadData, error: uploadError } = await supabase
@@ -183,19 +131,19 @@ serve(async (req) => {
       .upload(avatarPath, imageBlob, {
         contentType: responseType,
         upsert: true
-      });
+      })
 
     if (uploadError) {
-      console.error('Error uploading avatar:', uploadError);
-      throw uploadError;
+      console.error('Error uploading avatar:', uploadError)
+      throw uploadError
     }
 
-    console.log('Avatar uploaded successfully');
+    console.log('Avatar uploaded successfully')
 
     // Get the public URL for the uploaded avatar
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
-      .getPublicUrl(avatarPath);
+      .getPublicUrl(avatarPath)
 
     // Store metadata in user_avatars table
     const { data: metadataData, error: metadataError } = await supabase
@@ -205,15 +153,15 @@ serve(async (req) => {
         original_image_path: `${bucketName}/${imagePath}`,
         avatar_image_path: `avatars/${avatarPath}`
       })
-      .select();
+      .select()
 
     if (metadataError) {
-      console.error('Error storing avatar metadata:', metadataError);
-      throw metadataError;
+      console.error('Error storing avatar metadata:', metadataError)
+      throw metadataError
     }
 
-    console.log('Avatar metadata stored successfully');
-    console.log('Avatar stored at:', publicUrl);
+    console.log('Avatar metadata stored successfully')
+    console.log('Avatar stored at:', publicUrl)
 
     return new Response(
       JSON.stringify({ 
@@ -221,46 +169,46 @@ serve(async (req) => {
         avatarId: metadataData?.[0]?.id
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   } catch (error) {
-    console.error('Detailed error during avatar generation:', error);
+    console.error('Detailed error during avatar generation:', error)
     
-    // If something fails during Gemini image generation, we'll fall back to the original image
+    // If something fails during image generation, we'll fall back to the original image
     try {
       // Extract information from the error to determine if we should fall back
-      const shouldFallback = true; // We'll always fall back for now
+      const shouldFallback = true // We'll always fall back for now
       
       if (shouldFallback) {
-        console.log('Falling back to original image as avatar');
+        console.log('Falling back to original image as avatar')
         
         // Try to parse the original request again to get imageUrl and userId
-        const { imageUrl, userId, responseType = 'image/png' } = await req.json();
+        const { imageUrl, userId, responseType = 'image/png' } = await req.json()
         
         // Extract path from the imageUrl again
-        const urlParts = imageUrl.split('/storage/v1/object/public/');
-        const pathParts = urlParts[1].split('/');
-        const bucketName = pathParts[0];
-        const imagePath = pathParts.slice(1).join('/');
+        const urlParts = imageUrl.split('/storage/v1/object/public/')
+        const pathParts = urlParts[1].split('/')
+        const bucketName = pathParts[0]
+        const imagePath = pathParts.slice(1).join('/')
         
         // Download the original image
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL') || '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-        );
+        )
         
         const { data: fileData } = await supabase
           .storage
           .from(bucketName)
-          .download(imagePath);
+          .download(imagePath)
         
         if (!fileData) {
-          throw new Error('Failed to download original image for fallback');
+          throw new Error('Failed to download original image for fallback')
         }
         
         // Define paths for storing the avatar
-        const userFolder = `user-${userId}`;
-        const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
-        const avatarPath = `${userFolder}/${avatarFileName}`;
+        const userFolder = `user-${userId}`
+        const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`
+        const avatarPath = `${userFolder}/${avatarFileName}`
         
         // Upload the original image as avatar
         const { error: uploadError } = await supabase
@@ -269,16 +217,16 @@ serve(async (req) => {
           .upload(avatarPath, fileData, {
             contentType: responseType,
             upsert: true
-          });
+          })
 
         if (uploadError) {
-          throw uploadError;
+          throw uploadError
         }
 
         // Get the public URL for the uploaded avatar
         const { data: { publicUrl } } = supabase.storage
           .from('avatars')
-          .getPublicUrl(avatarPath);
+          .getPublicUrl(avatarPath)
 
         // Store metadata in user_avatars table
         const { data: metadataData, error: metadataError } = await supabase
@@ -288,10 +236,10 @@ serve(async (req) => {
             original_image_path: `${bucketName}/${imagePath}`,
             avatar_image_path: `avatars/${avatarPath}`
           })
-          .select();
+          .select()
 
         if (metadataError) {
-          throw metadataError;
+          throw metadataError
         }
 
         return new Response(
@@ -301,16 +249,16 @@ serve(async (req) => {
             note: "Using original image as avatar due to generation error"
           }), 
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        )
       }
     } catch (fallbackError) {
-      console.error('Error in fallback logic:', fallbackError);
+      console.error('Error in fallback logic:', fallbackError)
     }
     
     // If we get here, both the main flow and fallback have failed
     return new Response(
       JSON.stringify({ error: error.message }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
-});
+})
