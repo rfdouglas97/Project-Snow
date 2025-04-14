@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { decode as decodeBase64 } from "https://deno.land/std@0.208.0/encoding/base64.ts";
@@ -199,7 +198,31 @@ serve(async (req) => {
               );
             }
           } else {
-            throw new Error(result.error || "Unknown error during image processing");
+            console.error('Detailed Stability AI Error:', {
+              error: result.error,
+              imageDetails: {
+                width: imageMetadata.width,
+                height: imageMetadata.height,
+                format: imageMetadata.format,
+                totalPixels: imageMetadata.width * imageMetadata.height
+              }
+            });
+
+            return new Response(
+              JSON.stringify({ 
+                error: result.error,
+                details: {
+                  imageWidth: imageMetadata.width,
+                  imageHeight: imageMetadata.height,
+                  imageFormat: imageMetadata.format,
+                  totalPixels: imageMetadata.width * imageMetadata.height
+                }
+              }), 
+              { 
+                status: 500, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            );
           }
         }
       } catch (resizeError) {
@@ -293,7 +316,31 @@ serve(async (req) => {
           );
         }
       } else {
-        throw new Error(result.error || "Unknown error during image processing");
+        console.error('Detailed Stability AI Error:', {
+          error: result.error,
+          imageDetails: {
+            width: imageMetadata.width,
+            height: imageMetadata.height,
+            format: imageMetadata.format,
+            totalPixels: imageMetadata.width * imageMetadata.height
+          }
+        });
+
+        return new Response(
+          JSON.stringify({ 
+            error: result.error,
+            details: {
+              imageWidth: imageMetadata.width,
+              imageHeight: imageMetadata.height,
+              imageFormat: imageMetadata.format,
+              totalPixels: imageMetadata.width * imageMetadata.height
+            }
+          }), 
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
       }
     } catch (processError) {
       console.error('Stability API processing error, falling back to original image:', processError);
@@ -547,8 +594,12 @@ async function processImageWithStabilityAI(imageBlob, apiKey) {
     
     if (!stabilityResponse.ok) {
       const errorText = await stabilityResponse.text();
-      console.error('Stability API error response:', errorText);
-      console.error('Stability API HTTP status:', stabilityResponse.status);
+      console.error('Detailed Stability API Error:', {
+        status: stabilityResponse.status,
+        statusText: stabilityResponse.statusText,
+        errorBody: errorText
+      });
+      
       return { 
         success: false, 
         error: `API Error: ${stabilityResponse.status} - ${errorText}`
