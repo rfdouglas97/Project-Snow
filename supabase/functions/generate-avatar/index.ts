@@ -70,27 +70,86 @@ serve(async (req) => {
       throw new Error('STABILITY_API_KEY is not set')
     }
 
-    // Resize the image if needed to fit within Stability API limits
-    const resizedImageData = await resizeImageIfNeeded(fileData);
+    // Create a blob from the file data
+    const imageBlob = new Blob([fileData], { type: 'image/png' });
+    
+    // Check image dimensions before sending to Stability AI
+    const imageMetadata = await getImageMetadata(imageBlob);
+    console.log('Image dimensions:', imageMetadata);
+    
+    // Manually check if image size exceeds limits
+    if (imageMetadata.width * imageMetadata.height > MAX_PIXELS) {
+      console.log('Image is too large, need to resize or use original');
+      
+      // Define paths for storing the avatar
+      const userFolder = `user-${userId}`;
+      const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
+      const avatarPath = `${userFolder}/${avatarFileName}`;
+      
+      // Upload the original image as avatar
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('avatars')
+        .upload(avatarPath, fileData, {
+          contentType: responseType,
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Error uploading avatar:', uploadError);
+        throw uploadError;
+      }
+
+      // Get the public URL for the uploaded avatar
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(avatarPath);
+
+      // Store metadata in user_avatars table - without the is_ai_generated field
+      const { data: metadataData, error: metadataError } = await supabase
+        .from('user_avatars')
+        .insert({
+          user_id: userId,
+          original_image_path: `${bucketName}/${imagePath}`,
+          avatar_image_path: `avatars/${avatarPath}`
+        })
+        .select();
+
+      if (metadataError) {
+        console.error('Error storing avatar metadata:', metadataError);
+        throw metadataError;
+      }
+
+      console.log('Fallback avatar stored at:', publicUrl);
+
+      return new Response(
+        JSON.stringify({ 
+          avatarUrl: publicUrl,
+          avatarId: metadataData?.[0]?.id,
+          note: "Using original image as avatar due to size limitations"
+        }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     // Send the image to Stability AI for processing
-    console.log('Calling Stability API for image generation')
+    console.log('Calling Stability API for image generation');
     
     // Create FormData for the API request
-    const formData = new FormData()
+    const formData = new FormData();
     
-    // Add the image file with the correct parameter name
-    formData.append('init_image', new Blob([resizedImageData], { type: 'image/png' }), 'input.png')
+    // Add the image file to the FormData
+    formData.append('init_image', imageBlob, 'input.png');
     
     // Add the required parameters
-    formData.append('text_prompts[0][text]', 'Remove the original background completely. Place the person centered on a solid white background. Do NOT modify face, hairstyle, or body proportions at all. Keep clothing neutral-colored. Standardize pose to standing straight, facing forward, neutral expression, portrait orientation, full body visible head-to-toe.')
-    formData.append('text_prompts[0][weight]', '1')
-    formData.append('cfg_scale', '7')
-    formData.append('clip_guidance_preset', 'FAST_BLUE')
-    formData.append('samples', '1')
-    formData.append('steps', '30')
-    formData.append('style_preset', 'photographic')
-    formData.append('image_strength', '0.65') // Adjust balance between input image and prompt
+    formData.append('text_prompts[0][text]', 'Generate a professional profile avatar. Remove the original background completely. Place the person centered on a solid white background. Keep face, hairstyle, and clothing as in the original. Make it look professional and clean.');
+    formData.append('text_prompts[0][weight]', '1');
+    formData.append('cfg_scale', '7');
+    formData.append('clip_guidance_preset', 'FAST_BLUE');
+    formData.append('samples', '1');
+    formData.append('steps', '30');
+    formData.append('style_preset', 'photographic');
+    formData.append('image_strength', '0.6');
     
     // Make the API call to Stability AI
     const stabilityResponse = await fetch(
@@ -103,23 +162,23 @@ serve(async (req) => {
         },
         body: formData
       }
-    )
+    );
 
-    console.log('Stability API raw response status:', stabilityResponse.status)
-    console.log('Stability API response headers:', Object.fromEntries(stabilityResponse.headers.entries()))
+    console.log('Stability API raw response status:', stabilityResponse.status);
+    console.log('Stability API response headers:', Object.fromEntries(stabilityResponse.headers.entries()));
     
     if (!stabilityResponse.ok) {
-      const errorText = await stabilityResponse.text()
-      console.error('Stability API error response:', errorText)
-      console.error('Stability API HTTP status:', stabilityResponse.status)
+      const errorText = await stabilityResponse.text();
+      console.error('Stability API error response:', errorText);
+      console.error('Stability API HTTP status:', stabilityResponse.status);
       
       // Fall back to using the original image as the avatar
-      console.log('Falling back to using the original image as avatar')
+      console.log('Falling back to using the original image as avatar');
       
       // Define paths for storing the avatar
-      const userFolder = `user-${userId}`
-      const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`
-      const avatarPath = `${userFolder}/${avatarFileName}`
+      const userFolder = `user-${userId}`;
+      const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
+      const avatarPath = `${userFolder}/${avatarFileName}`;
       
       // Upload the original image as avatar
       const { data: uploadData, error: uploadError } = await supabase
@@ -128,35 +187,34 @@ serve(async (req) => {
         .upload(avatarPath, fileData, {
           contentType: responseType,
           upsert: true
-        })
+        });
 
       if (uploadError) {
-        console.error('Error uploading avatar:', uploadError)
-        throw uploadError
+        console.error('Error uploading avatar:', uploadError);
+        throw uploadError;
       }
 
       // Get the public URL for the uploaded avatar
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(avatarPath)
+        .getPublicUrl(avatarPath);
 
-      // Store metadata in user_avatars table
+      // Store metadata in user_avatars table - without the is_ai_generated field
       const { data: metadataData, error: metadataError } = await supabase
         .from('user_avatars')
         .insert({
           user_id: userId,
           original_image_path: `${bucketName}/${imagePath}`,
-          avatar_image_path: `avatars/${avatarPath}`,
-          is_ai_generated: false
+          avatar_image_path: `avatars/${avatarPath}`
         })
-        .select()
+        .select();
 
       if (metadataError) {
-        console.error('Error storing avatar metadata:', metadataError)
-        throw metadataError
+        console.error('Error storing avatar metadata:', metadataError);
+        throw metadataError;
       }
 
-      console.log('Fallback avatar stored at:', publicUrl)
+      console.log('Fallback avatar stored at:', publicUrl);
 
       return new Response(
         JSON.stringify({ 
@@ -165,72 +223,71 @@ serve(async (req) => {
           note: "Using original image as avatar due to generation error"
         }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
     
-    const stabilityData = await stabilityResponse.json()
-    console.log('Stability API response:', JSON.stringify(stabilityData, null, 2))
+    const stabilityData = await stabilityResponse.json();
+    console.log('Stability API response:', JSON.stringify(stabilityData, null, 2));
     
     if (!stabilityData.artifacts || stabilityData.artifacts.length === 0) {
-      console.error('No images generated by Stability AI')
-      throw new Error('No images generated by Stability AI')
+      console.error('No images generated by Stability AI');
+      throw new Error('No images generated by Stability AI');
     }
     
     // Get the generated image
-    const generatedImageBase64 = stabilityData.artifacts[0].base64
+    const generatedImageBase64 = stabilityData.artifacts[0].base64;
     
     // Convert base64 to blob for upload
-    const binaryData = atob(generatedImageBase64)
-    const array = new Uint8Array(binaryData.length)
+    const binaryData = atob(generatedImageBase64);
+    const array = new Uint8Array(binaryData.length);
     for (let i = 0; i < binaryData.length; i++) {
-      array[i] = binaryData.charCodeAt(i)
+      array[i] = binaryData.charCodeAt(i);
     }
-    const imageBlob = new Blob([array], { type: responseType })
+    const imageBlob2 = new Blob([array], { type: responseType });
     
     // Define paths for storing the avatar
-    const userFolder = `user-${userId}`
-    const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`
-    const avatarPath = `${userFolder}/${avatarFileName}`
+    const userFolder = `user-${userId}`;
+    const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
+    const avatarPath = `${userFolder}/${avatarFileName}`;
     
     // Upload the generated image to the avatars bucket
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('avatars')
-      .upload(avatarPath, imageBlob, {
+      .upload(avatarPath, imageBlob2, {
         contentType: responseType,
         upsert: true
-      })
+      });
 
     if (uploadError) {
-      console.error('Error uploading avatar:', uploadError)
-      throw uploadError
+      console.error('Error uploading avatar:', uploadError);
+      throw uploadError;
     }
 
-    console.log('Avatar uploaded successfully')
+    console.log('Avatar uploaded successfully');
 
     // Get the public URL for the uploaded avatar
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
-      .getPublicUrl(avatarPath)
+      .getPublicUrl(avatarPath);
 
-    // Store metadata in user_avatars table
+    // Store metadata in user_avatars table - without the is_ai_generated field
     const { data: metadataData, error: metadataError } = await supabase
       .from('user_avatars')
       .insert({
         user_id: userId,
         original_image_path: `${bucketName}/${imagePath}`,
-        avatar_image_path: `avatars/${avatarPath}`,
-        is_ai_generated: true
+        avatar_image_path: `avatars/${avatarPath}`
       })
-      .select()
+      .select();
 
     if (metadataError) {
-      console.error('Error storing avatar metadata:', metadataError)
-      throw metadataError
+      console.error('Error storing avatar metadata:', metadataError);
+      throw metadataError;
     }
 
-    console.log('Avatar metadata stored successfully')
-    console.log('Avatar stored at:', publicUrl)
+    console.log('Avatar metadata stored successfully');
+    console.log('Avatar stored at:', publicUrl);
 
     return new Response(
       JSON.stringify({ 
@@ -238,82 +295,65 @@ serve(async (req) => {
         avatarId: metadataData?.[0]?.id
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
-    console.error('Detailed error during avatar generation:', error)
+    console.error('Detailed error during avatar generation:', error);
     
     return new Response(
       JSON.stringify({ error: error.message, details: error.stack }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
+});
 
-// Helper function to resize image if needed to comply with Stability AI size limits
-async function resizeImageIfNeeded(imageData: ArrayBuffer): Promise<ArrayBuffer> {
+// Helper function to get image dimensions
+async function getImageMetadata(imageBlob) {
   try {
-    // Convert ArrayBuffer to base64 for creating an image object
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(imageData)));
-    const img = new Image();
+    // We can't use the browser Image API in Deno
+    // Instead, use ArrayBuffer to inspect the image header
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const array = new Uint8Array(arrayBuffer);
     
-    // Wait for the image to load
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = reject;
-      img.src = `data:image/png;base64,${base64}`;
-    });
-    
-    // Check if resizing is needed
-    let width = img.width;
-    let height = img.height;
-    const totalPixels = width * height;
-    
-    if (width > MAX_DIMENSION || height > MAX_DIMENSION || totalPixels > MAX_PIXELS) {
-      console.log(`Image needs resizing. Original dimensions: ${width}x${height}, pixels: ${totalPixels}`);
-      
-      // Calculate new dimensions
-      if (totalPixels > MAX_PIXELS) {
-        const scale = Math.sqrt(MAX_PIXELS / totalPixels);
-        width = Math.floor(width * scale);
-        height = Math.floor(height * scale);
-      }
-      
-      if (width > MAX_DIMENSION) {
-        height = Math.floor(height * (MAX_DIMENSION / width));
-        width = MAX_DIMENSION;
-      }
-      
-      if (height > MAX_DIMENSION) {
-        width = Math.floor(width * (MAX_DIMENSION / height));
-        height = MAX_DIMENSION;
-      }
-      
-      console.log(`Resizing to: ${width}x${height}`);
-      
-      // Create canvas for resizing
-      const canvas = new OffscreenCanvas(width, height);
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        throw new Error('Failed to get canvas context');
-      }
-      
-      // Draw resized image on canvas
-      ctx.drawImage(img, 0, 0, width, height);
-      
-      // Convert canvas to blob
-      const blob = await canvas.convertToBlob({ type: 'image/png' });
-      
-      // Convert blob to ArrayBuffer
-      return await blob.arrayBuffer();
+    // Check if it's a JPEG
+    if (array[0] === 0xFF && array[1] === 0xD8) {
+      // This is a very simple implementation - in reality we would need more complex parsing
+      // For now, let's return a safe estimate
+      console.log('JPEG detected, using safe dimensions estimate');
+      return {
+        width: 2000,
+        height: 2000,
+        format: 'jpeg'
+      };
     }
     
-    // No resizing needed
-    console.log('Image does not need resizing');
-    return imageData;
+    // Check if it's a PNG
+    if (array[0] === 0x89 && array[1] === 0x50 && array[2] === 0x4E && array[3] === 0x47) {
+      // For PNG, dimensions are at a specific offset in the IHDR chunk
+      const width = (array[16] << 24) | (array[17] << 16) | (array[18] << 8) | array[19];
+      const height = (array[20] << 24) | (array[21] << 16) | (array[22] << 8) | array[23];
+      
+      console.log('PNG detected, dimensions:', width, 'x', height);
+      return {
+        width,
+        height,
+        format: 'png'
+      };
+    }
+    
+    // If we can't determine, return a conservative estimate
+    console.log('Image format not recognized, using maximum dimensions');
+    return {
+      width: 2000,
+      height: 2000,
+      format: 'unknown'
+    };
   } catch (error) {
-    console.error('Error resizing image:', error);
-    // Return original data if resizing fails
-    return imageData;
+    console.error('Error getting image metadata:', error);
+    // Return conservative dimensions that will trigger the size check
+    return {
+      width: 2000,
+      height: 2000,
+      format: 'error'
+    };
   }
 }
