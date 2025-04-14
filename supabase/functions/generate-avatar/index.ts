@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -46,8 +47,7 @@ serve(async (req) => {
     console.log('Extracted bucket name:', bucketName)
     console.log('Extracted image path:', imagePath)
 
-    // Download the original image - we'll keep this step even though 
-    // we're not directly using the image with Gemini (for future use)
+    // Download the original image
     const { data: fileData, error: downloadError } = await supabase
       .storage
       .from(bucketName)
@@ -59,11 +59,17 @@ serve(async (req) => {
     }
     
     console.log('Original file downloaded successfully')
+    
+    // Convert the file to base64 for sending to Gemini
+    const imageBuffer = await fileData.arrayBuffer()
+    const imageBase64 = btoa(String.fromCharCode(...new Uint8Array(imageBuffer)))
+    
+    console.log('Image converted to base64 for Gemini API')
 
     // Call Gemini's image generation API with the flash exp model
     console.log('Using Gemini 2.0 flash exp for avatar generation')
     
-    // Gemini API URL for the model gemini-pro-vision
+    // Gemini API URL for the model gemini-1.5-flash-experimental
     const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-experimental:generateContent';
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     
@@ -71,13 +77,19 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY is not set in environment variables');
     }
     
-    // Gemini API request body
+    // Gemini API request body with image included
     const geminiRequestBody = {
       contents: [
         {
           parts: [
             {
               text: "Create a professional, standardized avatar image for a profile picture. The image should be a simple, clean headshot with a neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for professional use."
+            },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: imageBase64
+              }
             }
           ]
         }
@@ -131,16 +143,15 @@ serve(async (req) => {
     // Log the entire response structure for debugging
     console.log('Full Gemini response structure:', JSON.stringify(geminiData));
     
-    // Extract the generated image URL or data from the Gemini response
-    // The exact path might depend on Gemini's response format
+    // Extract the generated image data from the Gemini response
     let generatedImageData;
     try {
       if (geminiData.candidates && geminiData.candidates[0] && 
           geminiData.candidates[0].content && geminiData.candidates[0].content.parts) {
         // Find the part that contains inline data for the image
         for (const part of geminiData.candidates[0].content.parts) {
-          if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
-            generatedImageData = part.inlineData.data; // This is likely base64 encoded
+          if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
+            generatedImageData = part.inline_data.data; // Base64 encoded image
             break;
           }
         }
