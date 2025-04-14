@@ -74,11 +74,11 @@ serve(async (req) => {
     
     console.log('Image converted to base64 for Gemini API')
 
-    // Using Gemini 2.0 flash for avatar generation
-    console.log('Using Gemini 2.0 flash for avatar generation')
+    // Using Gemini 2.0 Flash Experimental for avatar generation
+    console.log('Using Gemini 2.0 Flash Experimental for avatar generation')
     
-    // Gemini API URL for the model gemini-2.0-flash
-    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+    // Updated Gemini API URL for the experimental image generation model
+    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent'
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
     
     if (!geminiApiKey) {
