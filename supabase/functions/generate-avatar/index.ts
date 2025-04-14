@@ -77,13 +77,13 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY is not set in environment variables');
     }
     
-    // Gemini API request body with image included
+    // Gemini API request body with image included and specific instructions
     const geminiRequestBody = {
       contents: [
         {
           parts: [
             {
-              text: "Create a professional, standardized avatar image for a profile picture. The image should be a simple, clean headshot with a neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for professional use."
+              text: "Please do not edit the face of this photo in any way. Do not edit the facial features. Do not edit the eyes. Do not edit the hair. I need you to remove the background, change the color to a light white/grey, and place the figure in the original image front and center with a full frontal view of the figure in question. The final image should be a standardized professional avatar suitable for a profile picture."
             },
             {
               inline_data: {
