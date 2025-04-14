@@ -8,6 +8,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Max dimensions for Stability AI API (max pixels: 1,048,576 = 1024x1024)
+const MAX_DIMENSION = 1024;
+
+// Function to resize an image to meet max pixel requirements
+async function resizeImage(imageBuffer: ArrayBuffer): Promise<Uint8Array> {
+  const imgBlob = new Blob([imageBuffer], { type: 'image/png' });
+  const imgUrl = URL.createObjectURL(imgBlob);
+  
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let width = img.width;
+      let height = img.height;
+      const pixelCount = width * height;
+      
+      if (pixelCount > MAX_DIMENSION * MAX_DIMENSION) {
+        const aspectRatio = width / height;
+        
+        if (width > height) {
+          width = MAX_DIMENSION;
+          height = Math.round(width / aspectRatio);
+        } else {
+          height = MAX_DIMENSION;
+          width = Math.round(height * aspectRatio);
+        }
+        
+        console.log(`Resizing image from ${img.width}x${img.height} to ${width}x${height}`);
+      } else {
+        console.log(`Image is already within size limits: ${width}x${height}`);
+      }
+      
+      // Create canvas for resizing
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      
+      // Draw the image to the canvas with new dimensions
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert canvas to blob
+      canvas.convertToBlob({ type: 'image/png' }).then(blob => {
+        // Convert blob to array buffer
+        blob.arrayBuffer().then(buffer => {
+          resolve(new Uint8Array(buffer));
+          URL.revokeObjectURL(imgUrl);
+        }).catch(reject);
+      }).catch(reject);
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for resizing'));
+      URL.revokeObjectURL(imgUrl);
+    };
+    
+    img.src = imgUrl;
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -61,6 +123,11 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
     
+    // Resize the image to meet Stability AI's requirements
+    console.log('Resizing image to meet API requirements')
+    const resizedImageData = await resizeImage(fileData)
+    console.log('Image resized successfully')
+    
     // Get Stability API key
     const STABILITY_API_KEY = Deno.env.get('STABILITY_API_KEY')
     if (!STABILITY_API_KEY) {
@@ -71,7 +138,7 @@ serve(async (req) => {
     console.log('Calling Stability API for image generation')
     
     const formData = new FormData()
-    formData.append('init_image', new Blob([fileData], { type: 'image/png' }))
+    formData.append('init_image', new Blob([resizedImageData], { type: 'image/png' }))
     formData.append('text_prompts[0][text]', 'based on the input photo, take the figure in the image, do not modify the face or body at all, and place the figure centered against a white / light grey background. Standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe.')
     formData.append('text_prompts[0][weight]', '1')
     formData.append('cfg_scale', '7')

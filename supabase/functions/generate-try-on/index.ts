@@ -8,6 +8,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Max dimensions for Stability AI API (max pixels: 1,048,576 = 1024x1024)
+const MAX_DIMENSION = 1024;
+
+// Function to resize an image to meet max pixel requirements
+async function resizeImage(imageBuffer: ArrayBuffer): Promise<Uint8Array> {
+  const imgBlob = new Blob([imageBuffer], { type: 'image/png' });
+  const imgUrl = URL.createObjectURL(imgBlob);
+  
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions while maintaining aspect ratio
+      let width = img.width;
+      let height = img.height;
+      const pixelCount = width * height;
+      
+      if (pixelCount > MAX_DIMENSION * MAX_DIMENSION) {
+        const aspectRatio = width / height;
+        
+        if (width > height) {
+          width = MAX_DIMENSION;
+          height = Math.round(width / aspectRatio);
+        } else {
+          height = MAX_DIMENSION;
+          width = Math.round(height * aspectRatio);
+        }
+        
+        console.log(`Resizing image from ${img.width}x${img.height} to ${width}x${height}`);
+      } else {
+        console.log(`Image is already within size limits: ${width}x${height}`);
+      }
+      
+      // Create canvas for resizing
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      
+      // Draw the image to the canvas with new dimensions
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert canvas to blob
+      canvas.convertToBlob({ type: 'image/png' }).then(blob => {
+        // Convert blob to array buffer
+        blob.arrayBuffer().then(buffer => {
+          resolve(new Uint8Array(buffer));
+          URL.revokeObjectURL(imgUrl);
+        }).catch(reject);
+      }).catch(reject);
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image for resizing'));
+      URL.revokeObjectURL(imgUrl);
+    };
+    
+    img.src = imgUrl;
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -56,7 +118,16 @@ serve(async (req) => {
     }
     const productImage = await productResponse.arrayBuffer()
     
-    // Convert images to base64
+    // Resize images to meet Stability AI requirements
+    console.log('Resizing avatar image to meet API requirements')
+    const resizedAvatarData = await resizeImage(avatarImage)
+    console.log('Avatar image resized successfully')
+    
+    console.log('Resizing product image to meet API requirements')
+    const resizedProductData = await resizeImage(productImage)
+    console.log('Product image resized successfully')
+    
+    // Convert images to base64 for debugging purposes
     const avatarBase64 = btoa(String.fromCharCode(...new Uint8Array(avatarImage)))
     const productBase64 = btoa(String.fromCharCode(...new Uint8Array(productImage)))
 
@@ -64,7 +135,13 @@ serve(async (req) => {
     
     // Call Stability API for image-to-image generation
     const formData = new FormData()
-    formData.append('init_image', new Blob([new Uint8Array(avatarImage)], { type: 'image/png' }))
+    formData.append('init_image', new Blob([resizedAvatarData], { type: 'image/png' }))
+    formData.append('text_prompts[0][text]', `Generate a realistic image of the person in the photo wearing the clothing from this product: ${productImageUrl}. Keep the person's face and body proportions exactly the same, only change their outfit to match the product. Maintain a neutral background.`)
+    formData.append('text_prompts[0][weight]', '1')
+    formData.append('cfg_scale', '8')
+    formData.append('clip_guidance_preset', 'FAST_BLUE')
+    formData.append('samples', '1')
+    formData.append('steps', '30')
     
     // Using the appropriate endpoint for virtual try-on
     const stabilityResponse = await fetch(
