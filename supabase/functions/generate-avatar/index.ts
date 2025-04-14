@@ -87,7 +87,7 @@ serve(async (req) => {
           contents: [{
             parts: [
               {
-                text: "Create a standardized avatar of this person's full body against a neutral background. Keep the same facial features but standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe."
+                text: "based on the input photo, take the figure in the image, do not modify the face or body at all, and place the figure centered against a white / light grey background. Standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe. You should return an image"
               },
               {
                 inlineData: {
