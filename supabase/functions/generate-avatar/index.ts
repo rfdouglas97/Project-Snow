@@ -77,37 +77,39 @@ serve(async (req) => {
 
     console.log('Calling Gemini API for image generation')
     
-    // Updated fetch call based on the new example
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            {
-              text: "Create a standardized avatar of this person's full body against a neutral background. Keep the same facial features but standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe."
-            },
-            {
-              inlineData: {
-                mimeType: "image/jpeg",
-                data: imageBase64
-              }
-            }
-          ]
-        }],
-        generationConfig: {
-          temperature: 0.0,
-          topK: 1,
-          topP: 0,
-          maxOutputTokens: 8192,
+    // Corrected Gemini API request format
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, 
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        config: {
-          responseModalities: ["Text", "Image"]
-        }
-      })
-    });
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: "Create a standardized avatar of this person's full body against a neutral background. Keep the same facial features but standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe."
+              },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageBase64
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.0,
+            topK: 1,
+            topP: 0,
+            maxOutputTokens: 8192,
+            response_mime_type: responseType  // Explicitly request image response
+          }
+          // Removed the "config" field completely
+        })
+      }
+    );
 
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
