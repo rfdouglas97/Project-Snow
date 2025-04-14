@@ -53,7 +53,6 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
           userId: user.id,
           model: options.model,
           responseType: options.responseType || 'image/png',
-          // We don't need to specify responseModalities as we're using direct API format
           includeImageResponse: true
         }
       });

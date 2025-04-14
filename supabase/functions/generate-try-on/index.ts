@@ -73,7 +73,7 @@ serve(async (req) => {
 
       const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent"
       
-      // Prepare the correct payload structure
+      // Prepare the correct payload structure based on Gemini's requirements
       const payload = {
         contents: [
           {
