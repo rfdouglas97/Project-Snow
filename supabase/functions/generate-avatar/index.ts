@@ -10,6 +10,7 @@ const corsHeaders = {
 
 // Max dimensions for Stability AI API (max pixels: 1,048,576 = 1024x1024)
 const MAX_DIMENSION = 1024;
+const MAX_PIXELS = 1048576; // 1024 * 1024
 
 // Function to resize an image to meet max pixel requirements
 async function resizeImage(imageBuffer: ArrayBuffer): Promise<Uint8Array> {
@@ -24,20 +25,26 @@ async function resizeImage(imageBuffer: ArrayBuffer): Promise<Uint8Array> {
       let height = img.height;
       const pixelCount = width * height;
       
-      if (pixelCount > MAX_DIMENSION * MAX_DIMENSION) {
-        const aspectRatio = width / height;
+      console.log(`Original image dimensions: ${width}x${height}, ${pixelCount} pixels`);
+      
+      if (pixelCount > MAX_PIXELS) {
+        const scale = Math.sqrt(MAX_PIXELS / pixelCount);
+        width = Math.floor(width * scale);
+        height = Math.floor(height * scale);
         
-        if (width > height) {
+        // Ensure neither dimension exceeds MAX_DIMENSION
+        if (width > MAX_DIMENSION) {
+          height = Math.floor(height * (MAX_DIMENSION / width));
           width = MAX_DIMENSION;
-          height = Math.round(width / aspectRatio);
-        } else {
+        }
+        if (height > MAX_DIMENSION) {
+          width = Math.floor(width * (MAX_DIMENSION / height));
           height = MAX_DIMENSION;
-          width = Math.round(height * aspectRatio);
         }
         
-        console.log(`Resizing image from ${img.width}x${img.height} to ${width}x${height}`);
+        console.log(`Resizing image to: ${width}x${height}, ${width * height} pixels`);
       } else {
-        console.log(`Image is already within size limits: ${width}x${height}`);
+        console.log(`Image is already within size limits: ${width}x${height}, ${pixelCount} pixels`);
       }
       
       // Create canvas for resizing
@@ -137,21 +144,29 @@ serve(async (req) => {
     // Send the image to Stability AI for processing
     console.log('Calling Stability API for image generation')
     
+    // Create FormData and correctly append the image
     const formData = new FormData()
-    formData.append('init_image', new Blob([resizedImageData], { type: 'image/png' }))
-    formData.append('text_prompts[0][text]', 'based on the input photo, take the figure in the image, do not modify the face or body at all, and place the figure centered against a white / light grey background. Standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe.')
+    
+    // Convert resized image data to a proper Blob with filename
+    const imageBlob = new Blob([resizedImageData], { type: 'image/png' })
+    formData.append('init_image', imageBlob, 'input.png')
+    
+    // Add other required parameters with clear prompt
+    formData.append('text_prompts[0][text]', 'Remove the original background completely. Place the person centered on a solid white background. Do NOT modify face, hairstyle, or body proportions at all. Keep clothing neutral-colored. Standardize pose to standing straight, facing forward, neutral expression, portrait orientation, full body visible head-to-toe.')
     formData.append('text_prompts[0][weight]', '1')
     formData.append('cfg_scale', '7')
     formData.append('clip_guidance_preset', 'FAST_BLUE')
     formData.append('samples', '1')
     formData.append('steps', '30')
     
+    // Make the API call to Stability AI
     const stabilityResponse = await fetch(
       'https://api.stability.ai/v1/generation/stable-image-core-1-0-b/image-to-image', 
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${STABILITY_API_KEY}`,
+          // Let fetch set the content-type automatically for FormData
         },
         body: formData
       }
@@ -184,7 +199,7 @@ serve(async (req) => {
     for (let i = 0; i < binaryData.length; i++) {
       array[i] = binaryData.charCodeAt(i)
     }
-    const imageBlob = new Blob([array], { type: responseType })
+    const imageBlob2 = new Blob([array], { type: responseType })
     
     // Define paths for storing the avatar
     const userFolder = `user-${userId}`
@@ -195,7 +210,7 @@ serve(async (req) => {
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('avatars')
-      .upload(avatarPath, imageBlob, {
+      .upload(avatarPath, imageBlob2, {
         contentType: responseType,
         upsert: true
       })
