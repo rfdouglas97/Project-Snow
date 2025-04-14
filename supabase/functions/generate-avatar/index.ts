@@ -77,7 +77,7 @@ serve(async (req) => {
 
     console.log('Calling Gemini API for image generation')
     
-    // Updated fetch call with new configuration based on the provided example
+    // Updated fetch call based on the new example
     const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -90,8 +90,8 @@ serve(async (req) => {
               text: "Create a standardized avatar of this person's full body against a neutral background. Keep the same facial features but standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe."
             },
             {
-              inline_data: {
-                mime_type: "image/jpeg",
+              inlineData: {
+                mimeType: "image/jpeg",
                 data: imageBase64
               }
             }
@@ -103,7 +103,6 @@ serve(async (req) => {
           topP: 0,
           maxOutputTokens: 8192,
         },
-        // Use responseModalities to request image output instead of response_mime_type
         config: {
           responseModalities: ["Text", "Image"]
         }
@@ -120,7 +119,7 @@ serve(async (req) => {
     const geminiData = await geminiResponse.json();
     console.log('Gemini API response received');
     
-    // Extract image data from Gemini response based on the new structure
+    // Extract image data from Gemini response
     let generatedImageBase64 = null;
     
     if (geminiData.candidates && geminiData.candidates.length > 0) {

@@ -46,7 +46,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
           productImageUrl: productImageUrl,
           userId: user.id,
           model: options.model,
-          responseType: options.responseType || 'image/png'  // Pass the response type to get an image back
+          responseType: options.responseType || 'image/png'
         }
       });
 
@@ -68,7 +68,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         toast({
           title: "AI generation unavailable",
           description: "Using your avatar as a placeholder. Please try again later.",
-          variant: "destructive", // Changed from "warning" to "destructive" to fix the type error
+          variant: "destructive",
         });
       } else {
         toast({
@@ -78,7 +78,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
       }
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during try-on generation:", error);
       toast({
         title: "Generation failed",
