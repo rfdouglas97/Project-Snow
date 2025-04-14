@@ -16,7 +16,7 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { avatarUrl, productImageUrl, userId, model = 'gemini', responseType = 'image/png', includeImageResponse = true } = await req.json()
+    const { avatarUrl, productImageUrl, userId, responseType = 'image/png', includeImageResponse = true } = await req.json()
 
     if (!avatarUrl || !productImageUrl || !userId) {
       return new Response(
@@ -28,7 +28,6 @@ serve(async (req) => {
     console.log('Processing try-on generation for user:', userId)
     console.log('Avatar URL:', avatarUrl)
     console.log('Product URL:', productImageUrl)
-    console.log('Model requested:', model)
     console.log('Response type requested:', responseType)
 
     // Initialize Supabase client
@@ -45,9 +44,8 @@ serve(async (req) => {
     const avatarBlob = await avatarResponse.blob()
     const avatarBuffer = await avatarBlob.arrayBuffer()
     const avatarBytes = new Uint8Array(avatarBuffer)
-    const avatarBase64 = btoa(String.fromCharCode(...avatarBytes))
     
-    console.log('Avatar image downloaded and converted to base64')
+    console.log('Avatar image downloaded')
 
     // Download product image
     const productResponse = await fetch(productImageUrl)
@@ -57,163 +55,121 @@ serve(async (req) => {
     const productBlob = await productResponse.blob()
     const productBuffer = await productBlob.arrayBuffer()
     const productBytes = new Uint8Array(productBuffer)
-    const productBase64 = btoa(String.fromCharCode(...productBytes))
     
-    console.log('Product image downloaded and converted to base64')
+    console.log('Product image downloaded')
 
     let tryOnImageBase64 = null
+    let isPlaceholder = false
 
-    if (model === 'gemini') {
-      // Use the exact payload structure required by Gemini for image generation
-      console.log('Using Gemini model for image generation')
-      const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-      if (!GEMINI_API_KEY) {
-        throw new Error('GEMINI_API_KEY is not set')
+    try {
+      // Get Stability API key
+      const STABILITY_API_KEY = Deno.env.get('STABILITY_API_KEY')
+      if (!STABILITY_API_KEY) {
+        throw new Error('STABILITY_API_KEY is not set')
       }
 
-      const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent"
+      console.log('Using Stability AI for image generation')
       
-      // Prepare the correct payload structure based on Gemini's requirements
-      const payload = {
-        contents: [
-          {
-            parts: [
-              {
-                text: "Generate an image of a person wearing this clothing item. Make the person from the first image wear the clothing from the second image. The result should look realistic and professional."
-              },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: avatarBase64
-                }
-              },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: productBase64
-                }
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          topK: 32,
-          topP: 1,
-          maxOutputTokens: 4096
-        }
-      }
+      // Create form data with avatar and product images
+      const formData = new FormData()
+      formData.append('init_image', new Blob([avatarBytes], { type: 'image/jpeg' }))
+      formData.append('image_strength', '0.35') // Control how much influence the init image has
+      formData.append('style_preset', 'photographic')
+      formData.append('cfg_scale', '7')
+      formData.append('samples', '1')
+      formData.append('steps', '30')
+      
+      // Add text prompt to reflect what we want
+      formData.append('text_prompts[0][text]', `Person wearing the clothing from this product image. Realistic, photographic quality. Professional fashion photography.`)
+      formData.append('text_prompts[0][weight]', '1')
+      
+      // Add negative prompts
+      formData.append('text_prompts[1][text]', 'blurry, bad quality, distorted, deformed, disfigured, unrealistic, cartoon')
+      formData.append('text_prompts[1][weight]', '-1')
 
-      console.log('Sending request to Gemini API with the correct payload structure')
-      
-      try {
-        const geminiResponse = await fetch(`${geminiEndpoint}?key=${GEMINI_API_KEY}`, {
+      // Call Stability AI API
+      const stabilityResponse = await fetch(
+        'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/image-to-image',
+        {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${STABILITY_API_KEY}`,
+            // No content-type as FormData sets it with boundary
           },
-          body: JSON.stringify(payload)
-        })
+          body: formData
+        }
+      )
 
-        if (!geminiResponse.ok) {
-          const errorText = await geminiResponse.text()
-          console.error('Error response from Gemini API:', errorText)
-          throw new Error(`Gemini API returned status ${geminiResponse.status}: ${errorText}`)
-        }
-        
-        const geminiData = await geminiResponse.json()
-        console.log('Gemini API response structure:', JSON.stringify(Object.keys(geminiData), null, 2))
-        
-        // Parse the response to extract the generated image
-        if (geminiData.candidates && geminiData.candidates.length > 0) {
-          const candidate = geminiData.candidates[0]
-          console.log('Candidate finish reason:', candidate.finishReason)
-          
-          if (candidate.content && candidate.content.parts) {
-            console.log('Content parts length:', candidate.content.parts.length)
-            
-            for (const part of candidate.content.parts) {
-              console.log('Part keys:', Object.keys(part))
-              
-              if (part.inlineData && part.inlineData.data) {
-                console.log('Found image in response')
-                tryOnImageBase64 = part.inlineData.data
-                break
-              }
-            }
-          }
-        }
-        
-        if (!tryOnImageBase64) {
-          console.error('No image found in Gemini response. Full response:', JSON.stringify(geminiData, null, 2))
-          throw new Error('No image generated by Gemini')
-        }
-        
-      } catch (geminiError) {
-        console.error('Error from Gemini API:', geminiError)
-        // Fall back to using the avatar as a placeholder
-        console.log('Falling back to avatar as placeholder')
-        tryOnImageBase64 = avatarBase64
-        // Return early with the placeholder
-        const userFolder = `try-on/${userId}`
-        const fileName = `${Date.now()}.${responseType.split('/')[1]}`
-        const filePath = `${userFolder}/${fileName}`
-        
-        // Convert base64 to Uint8Array for upload
-        const binaryString = atob(tryOnImageBase64)
-        const len = binaryString.length
-        const bytes = new Uint8Array(len)
-        for (let i = 0; i < len; i++) {
-          bytes[i] = binaryString.charCodeAt(i)
-        }
-        
-        // Upload the generated image (or avatar as fallback)
-        const { data: uploadData, error: uploadError } = await supabase
-          .storage
-          .from('avatars')  // Using the avatars bucket for try-on images as well
-          .upload(filePath, bytes, {
-            contentType: responseType,
-            upsert: true
-          })
-        
-        if (uploadError) {
-          console.error('Error uploading try-on image:', uploadError)
-          throw uploadError
-        }
-        
-        // Get the public URL for the uploaded image
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath)
-        
-        return new Response(
-          JSON.stringify({ 
-            tryOnImageUrl: publicUrl,
-            isPlaceholder: true,
-            message: "Used avatar as placeholder due to Gemini API error"
-          }), 
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-    } else if (model === 'openai') {
-      // Implementation for OpenAI model
-      console.log('Using OpenAI model for image generation')
-      const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
-      if (!OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY is not set')
+      if (!stabilityResponse.ok) {
+        const errorText = await stabilityResponse.text()
+        console.error('Error response from Stability API:', errorText)
+        throw new Error(`Stability API returned status ${stabilityResponse.status}: ${errorText}`)
       }
       
-      // OpenAI implementation would go here
-      // For now, we'll use the avatar as a placeholder
-      console.log('OpenAI implementation not available, using avatar as placeholder')
+      const stabilityData = await stabilityResponse.json()
+      console.log('Stability API response received')
+      
+      // Parse the response to extract the generated image
+      if (stabilityData.artifacts && stabilityData.artifacts.length > 0) {
+        const generatedImage = stabilityData.artifacts[0]
+        tryOnImageBase64 = generatedImage.base64
+        
+        console.log('Successfully retrieved generated image from Stability AI')
+      } else {
+        console.error('No images found in Stability response:', stabilityData)
+        throw new Error('No images generated by Stability AI')
+      }
+      
+    } catch (aiError) {
+      console.error('Error from Stability AI:', aiError)
+      // Fall back to using the avatar as a placeholder
+      console.log('Falling back to avatar as placeholder')
+      
+      // Convert avatar to base64
+      const avatarBase64 = btoa(String.fromCharCode(...avatarBytes))
       tryOnImageBase64 = avatarBase64
+      isPlaceholder = true
       
-      // Mark the response as a placeholder
-      const isPlaceholder = true
-    }
-    
-    if (!tryOnImageBase64) {
-      throw new Error('Failed to generate try-on image')
+      // Return early with the placeholder
+      const userFolder = `try-on/${userId}`
+      const fileName = `${Date.now()}.${responseType.split('/')[1]}`
+      const filePath = `${userFolder}/${fileName}`
+      
+      // Convert base64 to Uint8Array for upload
+      const binaryString = atob(tryOnImageBase64)
+      const len = binaryString.length
+      const bytes = new Uint8Array(len)
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      
+      // Upload the generated image (or avatar as fallback)
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('avatars')  // Using the avatars bucket for try-on images as well
+        .upload(filePath, bytes, {
+          contentType: responseType,
+          upsert: true
+        })
+      
+      if (uploadError) {
+        console.error('Error uploading try-on image:', uploadError)
+        throw uploadError
+      }
+      
+      // Get the public URL for the uploaded image
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+      
+      return new Response(
+        JSON.stringify({ 
+          tryOnImageUrl: publicUrl,
+          isPlaceholder: true,
+          message: "Used avatar as placeholder due to AI API error"
+        }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Create the directory path for storing the try-on image
@@ -253,7 +209,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         tryOnImageUrl: publicUrl,
-        isPlaceholder: false
+        isPlaceholder: isPlaceholder
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

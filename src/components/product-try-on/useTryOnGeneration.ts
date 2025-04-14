@@ -10,7 +10,6 @@ interface TryOnGenerationProps {
 }
 
 interface GenerationOptions {
-  model?: 'gemini' | 'openai';
   responseType?: 'image/png' | 'image/jpeg';
 }
 
@@ -19,7 +18,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const generateTryOn = async (options: GenerationOptions = { model: 'gemini', responseType: 'image/png' }) => {
+  const generateTryOn = async (options: GenerationOptions = { responseType: 'image/png' }) => {
     if (!userAvatar) {
       toast({
         title: "Avatar required",
@@ -42,7 +41,6 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
       console.log('Calling generate-try-on function with:', {
         avatarUrl: userAvatar,
         productImageUrl: productImageUrl,
-        model: options.model
       });
 
       // Call the edge function to generate the try-on image
@@ -51,7 +49,6 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
           avatarUrl: userAvatar,
           productImageUrl: productImageUrl,
           userId: user.id,
-          model: options.model,
           responseType: options.responseType || 'image/png',
           includeImageResponse: true
         }
