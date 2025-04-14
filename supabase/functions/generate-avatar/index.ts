@@ -77,7 +77,7 @@ serve(async (req) => {
 
     console.log('Calling Gemini API for image generation')
     
-    // Fixed Gemini API request format - removed response_mime_type
+    // Using the correct Gemini API format for image generation
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, 
       {
@@ -104,7 +104,6 @@ serve(async (req) => {
             topK: 1,
             topP: 0,
             maxOutputTokens: 8192
-            // Removed the response_mime_type field as it's not supported
           }
         })
       }
