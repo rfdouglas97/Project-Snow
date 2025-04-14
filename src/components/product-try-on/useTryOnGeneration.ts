@@ -39,6 +39,12 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         throw new Error("User not authenticated");
       }
 
+      console.log('Calling generate-try-on function with:', {
+        avatarUrl: userAvatar,
+        productImageUrl: productImageUrl,
+        model: options.model
+      });
+
       // Call the edge function to generate the try-on image
       const { data, error } = await supabase.functions.invoke('generate-try-on', {
         body: { 
@@ -46,7 +52,9 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
           productImageUrl: productImageUrl,
           userId: user.id,
           model: options.model,
-          responseType: options.responseType || 'image/png'
+          responseType: options.responseType || 'image/png',
+          // Add proper response modalities for Gemini
+          includeImageResponse: true
         }
       });
 
@@ -59,6 +67,8 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         console.error("Generation error:", data.error);
         throw new Error(data.error);
       }
+
+      console.log('Try-on generation successful:', data);
 
       // Set the try-on image URL
       setTryOnImage(data.tryOnImageUrl);
