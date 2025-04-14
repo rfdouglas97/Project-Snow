@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@2.0.0"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
@@ -65,74 +64,91 @@ serve(async (req) => {
     let tryOnImageBase64 = null
 
     if (model === 'gemini') {
-      // Use the GoogleGenerativeAI SDK for Gemini
+      // Use the exact payload structure required by Gemini for image generation
       console.log('Using Gemini model for image generation')
       const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
       if (!GEMINI_API_KEY) {
         throw new Error('GEMINI_API_KEY is not set')
       }
 
-      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
-      const geminiModel = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp-image-generation",
-      })
-
-      console.log('Preparing content for Gemini API')
-      // Prepare the prompt and images
-      const contents = [
-        {
-          text: `Generate an image of a person wearing this clothing item. 
-                Use the first image as the person's avatar and the second image as the clothing item. 
-                Make it look realistic and professional, as if the person is actually wearing the clothing.`
-        },
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: avatarBase64
+      const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent"
+      
+      // Prepare the correct payload structure
+      const payload = {
+        contents: [
+          {
+            parts: [
+              {
+                text: "Generate an image of a person wearing this clothing item. Make the person from the first image wear the clothing from the second image. The result should look realistic and professional."
+              },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: avatarBase64
+                }
+              },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: productBase64
+                }
+              }
+            ]
           }
-        },
-        {
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: productBase64
-          }
+        ],
+        generationConfig: {
+          temperature: 0.4,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 4096
         }
-      ]
+      }
 
-      console.log('Sending request to Gemini API')
+      console.log('Sending request to Gemini API with the correct payload structure')
+      
       try {
-        const result = await geminiModel.generateContent({
-          contents,
-          config: {
-            responseModalities: ["Text", "Image"],
-            temperature: 0.1,
-            topK: 1,
-            topP: 0.95,
-          }
+        const geminiResponse = await fetch(`${geminiEndpoint}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
         })
 
-        console.log('Received response from Gemini API')
+        if (!geminiResponse.ok) {
+          const errorText = await geminiResponse.text()
+          console.error('Error response from Gemini API:', errorText)
+          throw new Error(`Gemini API returned status ${geminiResponse.status}: ${errorText}`)
+        }
         
-        // Process the response to extract the generated image
-        const response = result.response
-        console.log('Response parts length:', response.parts().length)
+        const geminiData = await geminiResponse.json()
+        console.log('Gemini API response structure:', JSON.stringify(Object.keys(geminiData), null, 2))
         
-        for (const part of response.parts()) {
-          console.log('Part type:', Object.keys(part))
+        // Parse the response to extract the generated image
+        if (geminiData.candidates && geminiData.candidates.length > 0) {
+          const candidate = geminiData.candidates[0]
+          console.log('Candidate finish reason:', candidate.finishReason)
           
-          if (part.inlineData?.data) {
-            console.log('Found image in inlineData with mime type:', part.inlineData.mimeType)
-            tryOnImageBase64 = part.inlineData.data
-            break
+          if (candidate.content && candidate.content.parts) {
+            console.log('Content parts length:', candidate.content.parts.length)
+            
+            for (const part of candidate.content.parts) {
+              console.log('Part keys:', Object.keys(part))
+              
+              if (part.inlineData && part.inlineData.data) {
+                console.log('Found image in response')
+                tryOnImageBase64 = part.inlineData.data
+                break
+              }
+            }
           }
         }
         
         if (!tryOnImageBase64) {
-          console.error('No image found in Gemini response. Response structure:', 
-            JSON.stringify(response.parts().map(p => Object.keys(p)), null, 2)
-          )
+          console.error('No image found in Gemini response. Full response:', JSON.stringify(geminiData, null, 2))
           throw new Error('No image generated by Gemini')
         }
+        
       } catch (geminiError) {
         console.error('Error from Gemini API:', geminiError)
         // Fall back to using the avatar as a placeholder

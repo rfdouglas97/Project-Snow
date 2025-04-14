@@ -53,7 +53,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
           userId: user.id,
           model: options.model,
           responseType: options.responseType || 'image/png',
-          // Add proper response modalities for Gemini
+          // We don't need to specify responseModalities as we're using direct API format
           includeImageResponse: true
         }
       });
