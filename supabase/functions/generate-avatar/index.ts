@@ -62,54 +62,94 @@ serve(async (req) => {
 
     // Instead of using variations, let's use the dall-e-3 generations endpoint
     // which can take a text prompt and is more reliable
-console.log('Using Stability AI for avatar generation')
+    console.log('Using OpenAI DALL-E 3 for avatar generation')
+    
+    // Call OpenAI Images API with text prompt
+    const openAIResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: "Create a professional, standardized avatar image based on this description: a simple, clean headshot with neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for profile pictures.",
+        n: 1,
+        size: "1024x1024",
+        response_format: "url"
+      })
+    });
 
-// Get API key
-const STABILITY_API_KEY = Deno.env.get('STABILITY_API_KEY');
-if (!STABILITY_API_KEY) {
-  throw new Error("Stability API key is not set");
-}
+    // Enhanced error handling for OpenAI API response
+    if (!openAIResponse.ok) {
+      const errorText = await openAIResponse.text();
+      let errorJson;
+      
+      try {
+        errorJson = JSON.parse(errorText);
+        console.error('OpenAI API error (parsed):', errorJson);
+      } catch (parseError) {
+        console.error('OpenAI API error (raw text):', errorText);
+        console.error('Parse error:', parseError);
+      }
+      
+      console.error('OpenAI API HTTP status:', openAIResponse.status);
+      console.error('OpenAI API status text:', openAIResponse.statusText);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'OpenAI API error', 
+          status: openAIResponse.status,
+          details: errorJson || errorText
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-// Convert Supabase fileData to a File object
-const imageFile = new File([await fileData.arrayBuffer()], 'input.png', { type: 'image/png' });
+    const openAIData = await openAIResponse.json()
+    console.log('OpenAI response received')
+    
+    // Log the entire response structure for debugging
+    console.log('Full OpenAI response structure:', JSON.stringify(openAIData))
+    
+    // Extract the generated image URL from the OpenAI Images API response
+    const generatedImageUrl = openAIData.data[0].url
+    
+    if (!generatedImageUrl) {
+      throw new Error('No image URL found in OpenAI response')
+    }
 
-// Prepare FormData
-const form = new FormData();
-form.append('init_image', imageFile);
-form.append('text_prompts[0][text]', 'Remove the background from this image and replace it with a clean white background. Do not alter the face or body structure. Return a realistic, professional avatar image with natural lighting.');
-form.append('cfg_scale', '7');
-form.append('clip_guidance_preset', 'FAST_BLUE');
-form.append('samples', '1');
-form.append('steps', '30');
-form.append('style_preset', 'photographic');
-form.append('image_strength', '0.6');
+    console.log('Generated image URL extracted:', generatedImageUrl)
 
-// Send request to Stability
-const stabilityResponse = await fetch('https://api.stability.ai/v1/generation/stable-image-core-1-0-b/image-to-image', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${STABILITY_API_KEY}`
-  },
-  body: form
-});
-
-// Handle response
-if (!stabilityResponse.ok) {
-  const errorText = await stabilityResponse.text();
-  console.error('Stability API error:', errorText);
-  throw new Error('Stability AI generation failed');
-}
-
-const stabilityData = await stabilityResponse.json();
-const base64 = stabilityData.artifacts?.[0]?.base64;
-if (!base64) {
-  throw new Error('No image returned by Stability AI');
-}
-
-// Convert base64 → Uint8Array → Blob
-const binaryData = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-const resultBlob = new Blob([binaryData], { type: 'image/png' });
-
+    // Download the generated avatar from the URL provided by OpenAI
+    console.log('Downloading image from URL:', generatedImageUrl)
+    const avatarResponse = await fetch(generatedImageUrl)
+    
+    // Enhanced error handling for image download
+    if (!avatarResponse.ok) {
+      console.error('Image download error status:', avatarResponse.status);
+      console.error('Image download status text:', avatarResponse.statusText);
+      
+      try {
+        const errorText = await avatarResponse.text();
+        console.error('Image download error response:', errorText);
+      } catch (e) {
+        console.error('Could not read image download error response');
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to download generated image', 
+          status: avatarResponse.status,
+          url: generatedImageUrl
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    const avatarBlob = await avatarResponse.blob()
+    const avatarArrayBuffer = await avatarBlob.arrayBuffer()
+    const avatarBuffer = new Uint8Array(avatarArrayBuffer)
 
     // Define paths for storing the avatar
     const userFolder = `user-${userId}`
