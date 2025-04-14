@@ -98,7 +98,8 @@ serve(async (req) => {
         user_id: userId,
         avatar_url: avatarUrl,
         product_image_url: productImageUrl,
-        try_on_image_path: `try-on-images/${tryOnPath}`
+        try_on_image_path: `try-on-images/${tryOnPath}`,
+        is_placeholder: true
       })
       .select()
 
