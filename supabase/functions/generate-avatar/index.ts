@@ -77,7 +77,7 @@ serve(async (req) => {
 
     console.log('Calling Gemini API for image generation')
     
-    // Updated fetch call with new configuration
+    // Updated fetch call with new configuration based on the provided example
     const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -102,7 +102,10 @@ serve(async (req) => {
           topK: 1,
           topP: 0,
           maxOutputTokens: 8192,
-          response_mime_type: responseType  // explicitly requests image output
+        },
+        // Use responseModalities to request image output instead of response_mime_type
+        config: {
+          responseModalities: ["Text", "Image"]
         }
       })
     });
@@ -117,21 +120,20 @@ serve(async (req) => {
     const geminiData = await geminiResponse.json();
     console.log('Gemini API response received');
     
-    // Extract image data from Gemini response
+    // Extract image data from Gemini response based on the new structure
     let generatedImageBase64 = null;
     
     if (geminiData.candidates && geminiData.candidates.length > 0) {
-      for (const candidate of geminiData.candidates) {
-        if (candidate.content && candidate.content.parts) {
-          for (const part of candidate.content.parts) {
-            if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
-              generatedImageBase64 = part.inline_data.data;
-              console.log('Found image in Gemini response with mime type:', part.inline_data.mime_type);
-              break;
-            }
+      const candidate = geminiData.candidates[0];
+      if (candidate.content && candidate.content.parts) {
+        for (const part of candidate.content.parts) {
+          // Check for inlineData which contains the image
+          if (part.inlineData) {
+            generatedImageBase64 = part.inlineData.data;
+            console.log('Found image in Gemini response with mime type:', part.inlineData.mimeType);
+            break;
           }
         }
-        if (generatedImageBase64) break;
       }
     }
     
