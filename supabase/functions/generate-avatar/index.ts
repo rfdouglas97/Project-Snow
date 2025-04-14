@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -101,6 +102,8 @@ serve(async (req) => {
       }
     };
     
+    console.log('Sending request to Gemini API...');
+    
     // Call Gemini API with the specified model
     const geminiResponse = await fetch(`${geminiUrl}?key=${geminiApiKey}`, {
       method: 'POST',
@@ -113,34 +116,35 @@ serve(async (req) => {
     // Enhanced error handling for Gemini API response
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      let errorJson;
-      
-      try {
-        errorJson = JSON.parse(errorText);
-        console.error('Gemini API error (parsed):', errorJson);
-      } catch (parseError) {
-        console.error('Gemini API error (raw text):', errorText);
-        console.error('Parse error:', parseError);
-      }
-      
       console.error('Gemini API HTTP status:', geminiResponse.status);
       console.error('Gemini API status text:', geminiResponse.statusText);
+      console.error('Gemini API error response:', errorText);
+      
+      let errorDetails = "Unknown error";
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('Gemini API error (parsed):', JSON.stringify(errorJson, null, 2));
+        errorDetails = errorJson.error?.message || JSON.stringify(errorJson);
+      } catch (parseError) {
+        console.error('Error parsing error response:', parseError);
+        errorDetails = errorText;
+      }
       
       return new Response(
         JSON.stringify({ 
           error: 'Gemini API error', 
           status: geminiResponse.status,
-          details: errorJson || errorText
+          details: errorDetails
         }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
     const geminiData = await geminiResponse.json();
     console.log('Gemini response received');
     
     // Log the entire response structure for debugging
-    console.log('Full Gemini response structure:', JSON.stringify(geminiData));
+    console.log('Gemini response structure:', JSON.stringify(geminiData, null, 2));
     
     // Extract the generated image data from the Gemini response
     let generatedImageData;
@@ -164,7 +168,7 @@ serve(async (req) => {
       console.log('Generated image data extracted from Gemini response');
     } catch (error) {
       console.error('Error extracting image from Gemini response:', error);
-      console.error('Gemini response structure:', geminiData);
+      console.error('Gemini response structure:', JSON.stringify(geminiData, null, 2));
       throw new Error('Failed to extract image from Gemini response: ' + error.message);
     }
 
