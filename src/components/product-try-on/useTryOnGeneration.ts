@@ -66,7 +66,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         toast({
           title: "AI generation unavailable",
           description: "Using your avatar as a placeholder. Please try again later.",
-          variant: "warning",
+          variant: "destructive", // Changed from "warning" to "destructive" to fix the type error
         });
       } else {
         toast({
