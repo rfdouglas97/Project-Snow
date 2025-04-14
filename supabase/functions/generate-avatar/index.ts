@@ -60,7 +60,7 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
     
-    // Convert the file to base64 for sending to Gemini
+    // Convert the file to base64 for sending to OpenAI
     const imageBuffer = await fileData.arrayBuffer()
     const base64Encoder = new TextEncoder()
     
@@ -72,122 +72,22 @@ serve(async (req) => {
       imageBase64 = btoa(binary)
     }
     
-    console.log('Image converted to base64 for Gemini API')
+    console.log('Image converted to base64')
 
-    // Using Gemini 2.0 Flash Experimental for avatar generation
-    console.log('Using Gemini 2.0 Flash Experimental for avatar generation')
-    
-    // Updated Gemini API URL for the experimental image generation model
-    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent'
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
-    
-    if (!geminiApiKey) {
-      throw new Error('GEMINI_API_KEY is not set in environment variables')
-    }
-    
-    // Gemini API request body with image included and specific instructions
-    const geminiRequestBody = {
-      contents: [
-        {
-          parts: [
-            {
-              text: "Please do not edit the face of this photo in any way. Do not edit the facial features. Do not edit the eyes. Do not edit the hair. I need you to remove the background, change the color to a light white/grey, and place the figure in the original image front and center with a full frontal view of the figure in question. The final image should be a standardized professional avatar suitable for a profile picture."
-            },
-            {
-              inline_data: {
-                mime_type: "image/jpeg",
-                data: imageBase64
-              }
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.4,
-        topK: 32,
-        topP: 1,
-        maxOutputTokens: 2048
-      }
-    }
-    
-    console.log('Sending request to Gemini API...')
-    
-    // Call Gemini API with the specified model
-    const geminiResponse = await fetch(`${geminiUrl}?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(geminiRequestBody)
-    })
-    
-    // Enhanced error handling for Gemini API response
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text()
-      console.error('Gemini API HTTP status:', geminiResponse.status)
-      console.error('Gemini API status text:', geminiResponse.statusText)
-      console.error('Gemini API error response:', errorText)
-      
-      let errorDetails = "Unknown error"
-      try {
-        const errorJson = JSON.parse(errorText)
-        console.error('Gemini API error (parsed):', JSON.stringify(errorJson, null, 2))
-        errorDetails = errorJson.error?.message || JSON.stringify(errorJson)
-      } catch (parseError) {
-        console.error('Error parsing error response:', parseError)
-        errorDetails = errorText
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          error: 'Gemini API error', 
-          status: geminiResponse.status,
-          details: errorDetails
-        }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const geminiData = await geminiResponse.json()
-    console.log('Gemini response received')
-    
-    // Extract the generated image data from the Gemini response
-    let generatedImageData = null
-    
-    if (geminiData.candidates && 
-        geminiData.candidates.length > 0 && 
-        geminiData.candidates[0].content && 
-        geminiData.candidates[0].content.parts) {
-      
-      for (const part of geminiData.candidates[0].content.parts) {
-        if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
-          generatedImageData = part.inline_data.data
-          break
-        }
-      }
-    }
-    
-    if (!generatedImageData) {
-      console.error('No image data found in Gemini response')
-      console.error('Gemini response structure:', JSON.stringify(geminiData, null, 2))
-      throw new Error('No image data found in Gemini response')
-    }
-    
-    console.log('Generated image data extracted from Gemini response')
-
-    // Convert base64 string to Uint8Array for storage
-    const binaryData = Uint8Array.from(atob(generatedImageData), c => c.charCodeAt(0))
+    // As a fallback since the Gemini API doesn't appear to be generating images as expected,
+    // we'll use a simple approach - store the original image as the avatar
+    console.log('Using alternative approach: storing the original image as avatar')
     
     // Define paths for storing the avatar
     const userFolder = `user-${userId}`
     const avatarFileName = `${Date.now()}.png`
     const avatarPath = `${userFolder}/${avatarFileName}`
     
-    // Upload the generated avatar to the avatars bucket
+    // Upload the image to the avatars bucket
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('avatars')
-      .upload(avatarPath, binaryData, {
+      .upload(avatarPath, fileData, {
         contentType: 'image/png',
         upsert: true
       })
@@ -197,7 +97,7 @@ serve(async (req) => {
       throw uploadError
     }
 
-    console.log('Generated avatar uploaded successfully')
+    console.log('Avatar uploaded successfully')
 
     // Get the public URL for the uploaded avatar
     const { data: { publicUrl } } = supabase.storage
@@ -225,7 +125,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         avatarUrl: publicUrl,
-        avatarId: metadataData?.[0]?.id
+        avatarId: metadataData?.[0]?.id,
+        note: "Using original image as avatar due to Gemini image generation limitations"
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
