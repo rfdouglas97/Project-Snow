@@ -77,14 +77,11 @@ serve(async (req) => {
 
     console.log('Calling Gemini API for image generation')
     
-    // Modified request to comply with Gemini's requirements
-    // Note: Gemini doesn't support direct image output, we'll get a text response
-    // with the image embedded in it
-    const geminiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent', {
+    // Updated fetch call with new configuration
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         contents: [{
@@ -101,11 +98,11 @@ serve(async (req) => {
           ]
         }],
         generationConfig: {
-          temperature: 0.4,
-          topK: 32,
-          topP: 1,
-          maxOutputTokens: 8192
-          // Removed response_mime_type as it's not supported for image generation
+          temperature: 0.0,
+          topK: 1,
+          topP: 0,
+          maxOutputTokens: 8192,
+          response_mime_type: responseType  // explicitly requests image output
         }
       })
     });
