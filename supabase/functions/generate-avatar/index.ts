@@ -22,7 +22,7 @@ serve(async (req) => {
     )
 
     // Parse request body
-    const { imageUrl, userId, responseType = 'image/png' } = await req.json()
+    const { imageUrl, userId } = await req.json()
 
     if (!imageUrl || !userId) {
       return new Response(
@@ -33,7 +33,6 @@ serve(async (req) => {
 
     console.log('Processing avatar generation for user:', userId)
     console.log('Image URL:', imageUrl)
-    console.log('Response type requested:', responseType)
 
     // Extract path from the imageUrl
     const urlParts = imageUrl.split('/storage/v1/object/public/')
@@ -60,120 +59,123 @@ serve(async (req) => {
     }
     
     console.log('Original file downloaded successfully')
-    
-    // Convert the file to base64 for sending to Gemini
-    const imageBuffer = await fileData.arrayBuffer()
-    const bytes = new Uint8Array(imageBuffer)
-    const binary = Array.from(bytes).map(byte => String.fromCharCode(byte)).join('')
-    const imageBase64 = btoa(binary)
-    
-    console.log('Image converted to base64')
 
-    // Call Gemini API to generate avatar
-    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY')
-    if (!GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY is not set')
-    }
-
-    console.log('Calling Gemini API for image generation')
+    // Instead of using variations, let's use the dall-e-3 generations endpoint
+    // which can take a text prompt and is more reliable
+    console.log('Using OpenAI DALL-E 3 for avatar generation')
     
-    // Using the correct Gemini API format for image generation
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${GEMINI_API_KEY}`, 
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              {
-                text: "Create a standardized avatar of this person's full body against a neutral background. Keep the same facial features but standardize the pose to be standing straight, facing forward with a neutral expression. Use neutral colored clothing. The image should be in a portrait orientation and include the full body from head to toe."
-              },
-              {
-                inlineData: {
-                  mimeType: "image/jpeg",
-                  data: imageBase64
-                }
-              }
-            ]
-          }],
-          generationConfig: {
-            temperature: 0.0,
-            topK: 1,
-            topP: 0,
-            maxOutputTokens: 8192
-          }
-        })
+    // Call OpenAI Images API with text prompt
+    const openAIResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: "Create a professional, standardized avatar image based on this description: a simple, clean headshot with neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for profile pictures.",
+        n: 1,
+        size: "1024x1024",
+        response_format: "url"
+      })
+    });
+
+    // Enhanced error handling for OpenAI API response
+    if (!openAIResponse.ok) {
+      const errorText = await openAIResponse.text();
+      let errorJson;
+      
+      try {
+        errorJson = JSON.parse(errorText);
+        console.error('OpenAI API error (parsed):', errorJson);
+      } catch (parseError) {
+        console.error('OpenAI API error (raw text):', errorText);
+        console.error('Parse error:', parseError);
       }
-    );
-
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error('Gemini API error response:', errorText);
-      console.error('Gemini API HTTP status:', geminiResponse.status);
-      throw new Error(`Gemini API error: ${geminiResponse.status} - ${errorText}`);
+      
+      console.error('OpenAI API HTTP status:', openAIResponse.status);
+      console.error('OpenAI API status text:', openAIResponse.statusText);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'OpenAI API error', 
+          status: openAIResponse.status,
+          details: errorJson || errorText
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
+
+    const openAIData = await openAIResponse.json()
+    console.log('OpenAI response received')
     
-    const geminiData = await geminiResponse.json();
-    console.log('Gemini API response received');
+    // Log the entire response structure for debugging
+    console.log('Full OpenAI response structure:', JSON.stringify(openAIData))
     
-    // Extract image data from Gemini response
-    let generatedImageBase64 = null;
+    // Extract the generated image URL from the OpenAI Images API response
+    const generatedImageUrl = openAIData.data[0].url
     
-    if (geminiData.candidates && geminiData.candidates.length > 0) {
-      const candidate = geminiData.candidates[0];
-      if (candidate.content && candidate.content.parts) {
-        for (const part of candidate.content.parts) {
-          // Check for inlineData which contains the image
-          if (part.inlineData) {
-            generatedImageBase64 = part.inlineData.data;
-            console.log('Found image in Gemini response with mime type:', part.inlineData.mimeType);
-            break;
-          }
-        }
+    if (!generatedImageUrl) {
+      throw new Error('No image URL found in OpenAI response')
+    }
+
+    console.log('Generated image URL extracted:', generatedImageUrl)
+
+    // Download the generated avatar from the URL provided by OpenAI
+    console.log('Downloading image from URL:', generatedImageUrl)
+    const avatarResponse = await fetch(generatedImageUrl)
+    
+    // Enhanced error handling for image download
+    if (!avatarResponse.ok) {
+      console.error('Image download error status:', avatarResponse.status);
+      console.error('Image download status text:', avatarResponse.statusText);
+      
+      try {
+        const errorText = await avatarResponse.text();
+        console.error('Image download error response:', errorText);
+      } catch (e) {
+        console.error('Could not read image download error response');
       }
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to download generated image', 
+          status: avatarResponse.status,
+          url: generatedImageUrl
+        }), 
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
     
-    if (!generatedImageBase64) {
-      console.error('No image found in Gemini response:', JSON.stringify(geminiData));
-      throw new Error('No image generated by Gemini');
-    }
+    const avatarBlob = await avatarResponse.blob()
+    const avatarArrayBuffer = await avatarBlob.arrayBuffer()
+    const avatarBuffer = new Uint8Array(avatarArrayBuffer)
 
-    // Convert base64 to blob for upload
-    const binaryData = atob(generatedImageBase64);
-    const array = new Uint8Array(binaryData.length);
-    for (let i = 0; i < binaryData.length; i++) {
-      array[i] = binaryData.charCodeAt(i);
-    }
-    const imageBlob = new Blob([array], { type: responseType });
-    
     // Define paths for storing the avatar
-    const userFolder = `user-${userId}`;
-    const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
-    const avatarPath = `${userFolder}/${avatarFileName}`;
+    const userFolder = `user-${userId}`
+    const avatarFileName = `${Date.now()}.png`
+    const avatarPath = `${userFolder}/${avatarFileName}`
     
-    // Upload the generated image to the avatars bucket
+    // Upload the generated avatar to the avatars bucket
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('avatars')
-      .upload(avatarPath, imageBlob, {
-        contentType: responseType,
+      .upload(avatarPath, avatarBuffer, {
+        contentType: 'image/png',
         upsert: true
-      });
+      })
 
     if (uploadError) {
-      console.error('Error uploading avatar:', uploadError);
-      throw uploadError;
+      console.error('Error uploading avatar:', uploadError)
+      throw uploadError
     }
 
-    console.log('Avatar uploaded successfully');
+    console.log('Generated avatar uploaded successfully')
 
     // Get the public URL for the uploaded avatar
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
-      .getPublicUrl(avatarPath);
+      .getPublicUrl(avatarPath)
 
     // Store metadata in user_avatars table
     const { data: metadataData, error: metadataError } = await supabase
@@ -183,15 +185,15 @@ serve(async (req) => {
         original_image_path: `${bucketName}/${imagePath}`,
         avatar_image_path: `avatars/${avatarPath}`
       })
-      .select();
+      .select()
 
     if (metadataError) {
-      console.error('Error storing avatar metadata:', metadataError);
-      throw metadataError;
+      console.error('Error storing avatar metadata:', metadataError)
+      throw metadataError
     }
 
-    console.log('Avatar metadata stored successfully');
-    console.log('Avatar stored at:', publicUrl);
+    console.log('Avatar metadata stored successfully')
+    console.log('Avatar stored at:', publicUrl)
 
     return new Response(
       JSON.stringify({ 
@@ -199,96 +201,12 @@ serve(async (req) => {
         avatarId: metadataData?.[0]?.id
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   } catch (error) {
-    console.error('Avatar generation error:', error);
-    
-    // If something fails during Gemini image generation, we'll fall back to the original image
-    try {
-      // Extract information from the error to determine if we should fall back
-      const shouldFallback = true; // We'll always fall back for now
-      
-      if (shouldFallback) {
-        console.log('Falling back to original image as avatar');
-        
-        // Try to parse the original request again to get imageUrl and userId
-        const { imageUrl, userId, responseType = 'image/png' } = await req.json();
-        
-        // Extract path from the imageUrl again
-        const urlParts = imageUrl.split('/storage/v1/object/public/');
-        const pathParts = urlParts[1].split('/');
-        const bucketName = pathParts[0];
-        const imagePath = pathParts.slice(1).join('/');
-        
-        // Download the original image
-        const supabase = createClient(
-          Deno.env.get('SUPABASE_URL') || '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-        );
-        
-        const { data: fileData } = await supabase
-          .storage
-          .from(bucketName)
-          .download(imagePath);
-        
-        if (!fileData) {
-          throw new Error('Failed to download original image for fallback');
-        }
-        
-        // Define paths for storing the avatar
-        const userFolder = `user-${userId}`;
-        const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
-        const avatarPath = `${userFolder}/${avatarFileName}`;
-        
-        // Upload the original image as avatar
-        const { error: uploadError } = await supabase
-          .storage
-          .from('avatars')
-          .upload(avatarPath, fileData, {
-            contentType: responseType,
-            upsert: true
-          });
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        // Get the public URL for the uploaded avatar
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(avatarPath);
-
-        // Store metadata in user_avatars table
-        const { data: metadataData, error: metadataError } = await supabase
-          .from('user_avatars')
-          .insert({
-            user_id: userId,
-            original_image_path: `${bucketName}/${imagePath}`,
-            avatar_image_path: `avatars/${avatarPath}`
-          })
-          .select();
-
-        if (metadataError) {
-          throw metadataError;
-        }
-
-        return new Response(
-          JSON.stringify({ 
-            avatarUrl: publicUrl,
-            avatarId: metadataData?.[0]?.id,
-            note: "Using original image as avatar due to generation error"
-          }), 
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    } catch (fallbackError) {
-      console.error('Error in fallback logic:', fallbackError);
-    }
-    
-    // If we get here, both the main flow and fallback have failed
+    console.error('Avatar generation error:', error)
     return new Response(
       JSON.stringify({ error: error.message }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
-});
+})

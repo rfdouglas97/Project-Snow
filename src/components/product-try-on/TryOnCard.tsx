@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { TryOnLoading } from "./TryOnLoading";
 import { TryOnImage } from "./TryOnImage";
 import { TryOnActions } from "./TryOnActions";
-import { Badge } from "@/components/ui/badge";
 
 interface TryOnCardProps {
   productName: string;
@@ -15,7 +14,6 @@ interface TryOnCardProps {
   onSave: () => void;
   onShare: () => void;
   onRegenerate?: () => void;
-  modelName?: string;
 }
 
 export function TryOnCard({
@@ -25,21 +23,13 @@ export function TryOnCard({
   onClose,
   onSave,
   onShare,
-  onRegenerate,
-  modelName = "AI"
+  onRegenerate
 }: TryOnCardProps) {
   return (
     <Card className="w-full shadow-lg">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-lg">Virtual Try-On</CardTitle>
-            {modelName && (
-              <Badge variant="outline" className="text-xs">
-                {modelName}
-              </Badge>
-            )}
-          </div>
+          <CardTitle className="text-lg">Virtual Try-On</CardTitle>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -50,7 +40,7 @@ export function TryOnCard({
       </CardHeader>
       <CardContent className="pt-2">
         {isLoading ? (
-          <TryOnLoading modelName={modelName} />
+          <TryOnLoading />
         ) : (
           <TryOnImage 
             imageUrl={tryOnImage} 

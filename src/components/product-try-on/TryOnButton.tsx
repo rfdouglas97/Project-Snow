@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 
 interface TryOnButtonProps {
   onClick: () => void;
-  modelBadge?: boolean;
 }
 
-export function TryOnButton({ onClick, modelBadge = false }: TryOnButtonProps) {
+export function TryOnButton({ onClick }: TryOnButtonProps) {
   return (
     <Button 
       onClick={onClick} 
@@ -15,11 +14,6 @@ export function TryOnButton({ onClick, modelBadge = false }: TryOnButtonProps) {
     >
       <Image className="h-5 w-5" />
       Try on with Mira
-      {modelBadge && (
-        <span className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full">
-          Gemini
-        </span>
-      )}
     </Button>
   );
 }

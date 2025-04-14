@@ -9,17 +9,12 @@ interface TryOnGenerationProps {
   productName: string;
 }
 
-interface GenerationOptions {
-  model?: 'gemini' | 'openai';
-  responseType?: 'image/png' | 'image/jpeg';
-}
-
 export function useTryOnGeneration({ userAvatar, productImageUrl, productName }: TryOnGenerationProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const generateTryOn = async (options: GenerationOptions = { model: 'gemini', responseType: 'image/png' }) => {
+  const generateTryOn = async () => {
     if (!userAvatar) {
       toast({
         title: "Avatar required",
@@ -44,9 +39,7 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         body: { 
           avatarUrl: userAvatar,
           productImageUrl: productImageUrl,
-          userId: user.id,
-          model: options.model,
-          responseType: options.responseType || 'image/png'
+          userId: user.id
         }
       });
 
@@ -63,22 +56,13 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
       // Set the try-on image URL
       setTryOnImage(data.tryOnImageUrl);
       
-      // If the response indicates it's a placeholder, show a different message
-      if (data.isPlaceholder) {
-        toast({
-          title: "AI generation unavailable",
-          description: "Using your avatar as a placeholder. Please try again later.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Try-on complete",
-          description: "Your virtual fitting is ready to view",
-        });
-      }
+      toast({
+        title: "Try-on complete",
+        description: "Your virtual fitting is ready to view",
+      });
       
       return true;
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error during try-on generation:", error);
       toast({
         title: "Generation failed",
