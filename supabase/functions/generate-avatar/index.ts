@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -69,8 +68,8 @@ serve(async (req) => {
     // Call Gemini's image generation API with the flash exp model
     console.log('Using Gemini 2.0 flash exp for avatar generation')
     
-    // Gemini API URL for the model gemini-1.5-flash-experimental
-    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-experimental:generateContent';
+    // Gemini API URL for the model gemini-2.0-flash-experimental
+    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-experimental:generateContent';
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     
     if (!geminiApiKey) {
