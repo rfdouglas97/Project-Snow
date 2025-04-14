@@ -22,7 +22,7 @@ serve(async (req) => {
     )
 
     // Parse request body
-    const { imageUrl, userId } = await req.json()
+    const { imageUrl, userId, responseType = 'image/png' } = await req.json()
 
     if (!imageUrl || !userId) {
       return new Response(
@@ -33,6 +33,7 @@ serve(async (req) => {
 
     console.log('Processing avatar generation for user:', userId)
     console.log('Image URL:', imageUrl)
+    console.log('Response type requested:', responseType)
 
     // Extract path from the imageUrl
     const urlParts = imageUrl.split('/storage/v1/object/public/')
@@ -74,7 +75,7 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY is not set')
     }
 
-    console.log('Calling Gemini API for image generation')
+    console.log('Calling Gemini API for image generation with response type:', responseType)
     const geminiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent', {
       method: 'POST',
       headers: {
@@ -100,6 +101,7 @@ serve(async (req) => {
           topK: 32,
           topP: 1,
           maxOutputTokens: 8192,
+          response_mime_type: responseType // This is the key change - explicitly request image output
         }
       })
     });
@@ -123,7 +125,7 @@ serve(async (req) => {
           for (const part of candidate.content.parts) {
             if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
               generatedImageBase64 = part.inline_data.data;
-              console.log('Found image in Gemini response');
+              console.log('Found image in Gemini response with mime type:', part.inline_data.mime_type);
               break;
             }
           }
@@ -143,11 +145,11 @@ serve(async (req) => {
     for (let i = 0; i < binaryData.length; i++) {
       array[i] = binaryData.charCodeAt(i);
     }
-    const imageBlob = new Blob([array], { type: 'image/png' });
+    const imageBlob = new Blob([array], { type: responseType });
     
     // Define paths for storing the avatar
     const userFolder = `user-${userId}`;
-    const avatarFileName = `${Date.now()}.png`;
+    const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
     const avatarPath = `${userFolder}/${avatarFileName}`;
     
     // Upload the generated image to the avatars bucket
@@ -155,7 +157,7 @@ serve(async (req) => {
       .storage
       .from('avatars')
       .upload(avatarPath, imageBlob, {
-        contentType: 'image/png',
+        contentType: responseType,
         upsert: true
       });
 
@@ -208,7 +210,7 @@ serve(async (req) => {
         console.log('Falling back to original image as avatar');
         
         // Try to parse the original request again to get imageUrl and userId
-        const { imageUrl, userId } = await req.json();
+        const { imageUrl, userId, responseType = 'image/png' } = await req.json();
         
         // Extract path from the imageUrl again
         const urlParts = imageUrl.split('/storage/v1/object/public/');
@@ -233,7 +235,7 @@ serve(async (req) => {
         
         // Define paths for storing the avatar
         const userFolder = `user-${userId}`;
-        const avatarFileName = `${Date.now()}.png`;
+        const avatarFileName = `${Date.now()}.${responseType.split('/')[1]}`;
         const avatarPath = `${userFolder}/${avatarFileName}`;
         
         // Upload the original image as avatar
@@ -241,7 +243,7 @@ serve(async (req) => {
           .storage
           .from('avatars')
           .upload(avatarPath, fileData, {
-            contentType: 'image/png',
+            contentType: responseType,
             upsert: true
           });
 
