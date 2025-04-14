@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
 import { UploadForm } from "./avatar/UploadForm";
 import { ImagePreview } from "./avatar/ImagePreview";
 import { ProgressIndicator } from "./avatar/ProgressIndicator";
@@ -112,13 +111,14 @@ export function AvatarGenerator() {
         description: "Your photo has been uploaded. Now processing your avatar...",
       });
 
-      // Set resizing state - this will show before the AI generation
+      // Show resizing state first - this gives visual feedback that we're working on the image size
       setIsResizing(true);
+      setIsUploading(false);
       
       // Short delay to show the resizing step
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Call edge function to generate avatar
+      // Now show the generating state
       setIsResizing(false);
       setIsGenerating(true);
       
