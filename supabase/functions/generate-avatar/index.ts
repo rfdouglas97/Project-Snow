@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
@@ -47,7 +46,8 @@ serve(async (req) => {
     console.log('Extracted bucket name:', bucketName)
     console.log('Extracted image path:', imagePath)
 
-    // Download the original image
+    // Download the original image - we'll keep this step even though 
+    // we're not directly using the image with Gemini (for future use)
     const { data: fileData, error: downloadError } = await supabase
       .storage
       .from(bucketName)
@@ -60,122 +60,132 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
 
-    // Instead of using variations, let's use the dall-e-3 generations endpoint
-    // which can take a text prompt and is more reliable
-    console.log('Using OpenAI DALL-E 3 for avatar generation')
+    // Call Gemini's image generation API with the flash exp model
+    console.log('Using Gemini 2.0 flash exp for avatar generation')
     
-    // Call OpenAI Images API with text prompt
-    const openAIResponse = await fetch('https://api.openai.com/v1/images/generations', {
+    // Gemini API URL for the model gemini-pro-vision
+    const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-experimental:generateContent';
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    
+    if (!geminiApiKey) {
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
+    }
+    
+    // Gemini API request body
+    const geminiRequestBody = {
+      contents: [
+        {
+          parts: [
+            {
+              text: "Create a professional, standardized avatar image for a profile picture. The image should be a simple, clean headshot with a neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for professional use."
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.4,
+        topK: 32,
+        topP: 1,
+        maxOutputTokens: 2048
+      }
+    };
+    
+    // Call Gemini API with the specified model
+    const geminiResponse = await fetch(`${geminiUrl}?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: "Create a professional, standardized avatar image based on this description: a simple, clean headshot with neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for profile pictures.",
-        n: 1,
-        size: "1024x1024",
-        response_format: "url"
-      })
+      body: JSON.stringify(geminiRequestBody)
     });
-
-    // Enhanced error handling for OpenAI API response
-    if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text();
+    
+    // Enhanced error handling for Gemini API response
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
       let errorJson;
       
       try {
         errorJson = JSON.parse(errorText);
-        console.error('OpenAI API error (parsed):', errorJson);
+        console.error('Gemini API error (parsed):', errorJson);
       } catch (parseError) {
-        console.error('OpenAI API error (raw text):', errorText);
+        console.error('Gemini API error (raw text):', errorText);
         console.error('Parse error:', parseError);
       }
       
-      console.error('OpenAI API HTTP status:', openAIResponse.status);
-      console.error('OpenAI API status text:', openAIResponse.statusText);
+      console.error('Gemini API HTTP status:', geminiResponse.status);
+      console.error('Gemini API status text:', geminiResponse.statusText);
       
       return new Response(
         JSON.stringify({ 
-          error: 'OpenAI API error', 
-          status: openAIResponse.status,
+          error: 'Gemini API error', 
+          status: geminiResponse.status,
           details: errorJson || errorText
         }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const openAIData = await openAIResponse.json()
-    console.log('OpenAI response received')
+    const geminiData = await geminiResponse.json();
+    console.log('Gemini response received');
     
     // Log the entire response structure for debugging
-    console.log('Full OpenAI response structure:', JSON.stringify(openAIData))
+    console.log('Full Gemini response structure:', JSON.stringify(geminiData));
     
-    // Extract the generated image URL from the OpenAI Images API response
-    const generatedImageUrl = openAIData.data[0].url
-    
-    if (!generatedImageUrl) {
-      throw new Error('No image URL found in OpenAI response')
-    }
-
-    console.log('Generated image URL extracted:', generatedImageUrl)
-
-    // Download the generated avatar from the URL provided by OpenAI
-    console.log('Downloading image from URL:', generatedImageUrl)
-    const avatarResponse = await fetch(generatedImageUrl)
-    
-    // Enhanced error handling for image download
-    if (!avatarResponse.ok) {
-      console.error('Image download error status:', avatarResponse.status);
-      console.error('Image download status text:', avatarResponse.statusText);
-      
-      try {
-        const errorText = await avatarResponse.text();
-        console.error('Image download error response:', errorText);
-      } catch (e) {
-        console.error('Could not read image download error response');
+    // Extract the generated image URL or data from the Gemini response
+    // The exact path might depend on Gemini's response format
+    let generatedImageData;
+    try {
+      if (geminiData.candidates && geminiData.candidates[0] && 
+          geminiData.candidates[0].content && geminiData.candidates[0].content.parts) {
+        // Find the part that contains inline data for the image
+        for (const part of geminiData.candidates[0].content.parts) {
+          if (part.inlineData && part.inlineData.mimeType.startsWith('image/')) {
+            generatedImageData = part.inlineData.data; // This is likely base64 encoded
+            break;
+          }
+        }
       }
       
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to download generated image', 
-          status: avatarResponse.status,
-          url: generatedImageUrl
-        }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      if (!generatedImageData) {
+        console.error('No image data found in Gemini response');
+        throw new Error('No image data found in Gemini response');
+      }
+      
+      console.log('Generated image data extracted from Gemini response');
+    } catch (error) {
+      console.error('Error extracting image from Gemini response:', error);
+      console.error('Gemini response structure:', geminiData);
+      throw new Error('Failed to extract image from Gemini response: ' + error.message);
     }
-    
-    const avatarBlob = await avatarResponse.blob()
-    const avatarArrayBuffer = await avatarBlob.arrayBuffer()
-    const avatarBuffer = new Uint8Array(avatarArrayBuffer)
 
+    // Convert base64 string to Uint8Array for storage
+    const binaryData = Uint8Array.from(atob(generatedImageData), c => c.charCodeAt(0));
+    
     // Define paths for storing the avatar
-    const userFolder = `user-${userId}`
-    const avatarFileName = `${Date.now()}.png`
-    const avatarPath = `${userFolder}/${avatarFileName}`
+    const userFolder = `user-${userId}`;
+    const avatarFileName = `${Date.now()}.png`;
+    const avatarPath = `${userFolder}/${avatarFileName}`;
     
     // Upload the generated avatar to the avatars bucket
     const { data: uploadData, error: uploadError } = await supabase
       .storage
       .from('avatars')
-      .upload(avatarPath, avatarBuffer, {
+      .upload(avatarPath, binaryData, {
         contentType: 'image/png',
         upsert: true
-      })
+      });
 
     if (uploadError) {
-      console.error('Error uploading avatar:', uploadError)
-      throw uploadError
+      console.error('Error uploading avatar:', uploadError);
+      throw uploadError;
     }
 
-    console.log('Generated avatar uploaded successfully')
+    console.log('Generated avatar uploaded successfully');
 
     // Get the public URL for the uploaded avatar
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
-      .getPublicUrl(avatarPath)
+      .getPublicUrl(avatarPath);
 
     // Store metadata in user_avatars table
     const { data: metadataData, error: metadataError } = await supabase
@@ -185,15 +195,15 @@ serve(async (req) => {
         original_image_path: `${bucketName}/${imagePath}`,
         avatar_image_path: `avatars/${avatarPath}`
       })
-      .select()
+      .select();
 
     if (metadataError) {
-      console.error('Error storing avatar metadata:', metadataError)
-      throw metadataError
+      console.error('Error storing avatar metadata:', metadataError);
+      throw metadataError;
     }
 
-    console.log('Avatar metadata stored successfully')
-    console.log('Avatar stored at:', publicUrl)
+    console.log('Avatar metadata stored successfully');
+    console.log('Avatar stored at:', publicUrl);
 
     return new Response(
       JSON.stringify({ 
@@ -201,12 +211,12 @@ serve(async (req) => {
         avatarId: metadataData?.[0]?.id
       }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   } catch (error) {
-    console.error('Avatar generation error:', error)
+    console.error('Avatar generation error:', error);
     return new Response(
       JSON.stringify({ error: error.message }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    );
   }
-})
+});
