@@ -9,12 +9,16 @@ interface TryOnGenerationProps {
   productName: string;
 }
 
+interface GenerationOptions {
+  model?: 'gemini' | 'openai';
+}
+
 export function useTryOnGeneration({ userAvatar, productImageUrl, productName }: TryOnGenerationProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const generateTryOn = async () => {
+  const generateTryOn = async (options: GenerationOptions = { model: 'gemini' }) => {
     if (!userAvatar) {
       toast({
         title: "Avatar required",
@@ -39,7 +43,8 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         body: { 
           avatarUrl: userAvatar,
           productImageUrl: productImageUrl,
-          userId: user.id
+          userId: user.id,
+          model: options.model  // Pass the model preference to the edge function
         }
       });
 
@@ -56,10 +61,19 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
       // Set the try-on image URL
       setTryOnImage(data.tryOnImageUrl);
       
-      toast({
-        title: "Try-on complete",
-        description: "Your virtual fitting is ready to view",
-      });
+      // If the response indicates it's a placeholder, show a different message
+      if (data.isPlaceholder) {
+        toast({
+          title: "AI generation unavailable",
+          description: "Using your avatar as a placeholder. Please try again later.",
+          variant: "warning",
+        });
+      } else {
+        toast({
+          title: "Try-on complete",
+          description: "Your virtual fitting is ready to view",
+        });
+      }
       
       return true;
     } catch (error) {

@@ -43,7 +43,8 @@ export function ProductTryOn({
     }
 
     setShowTryOn(true);
-    generateTryOn();
+    // Using Gemini by default, can be easily switched to 'openai'
+    generateTryOn({ model: 'gemini' });
   };
 
   const handleSave = () => {
@@ -94,6 +95,11 @@ export function ProductTryOn({
     }
   };
 
+  const handleRegenerate = async () => {
+    setTryOnImage(null);
+    generateTryOn({ model: 'gemini' });
+  };
+
   const handleClose = () => {
     setShowTryOn(false);
     setTryOnImage(null);
@@ -102,7 +108,10 @@ export function ProductTryOn({
   return (
     <div className="relative">
       {!showTryOn ? (
-        <TryOnButton onClick={handleTryOn} />
+        <TryOnButton 
+          onClick={handleTryOn} 
+          modelBadge={true}
+        />
       ) : (
         <TryOnCard
           productName={productName}
@@ -111,6 +120,8 @@ export function ProductTryOn({
           onClose={handleClose}
           onSave={handleSave}
           onShare={handleShare}
+          onRegenerate={handleRegenerate}
+          modelName="Gemini"
         />
       )}
     </div>

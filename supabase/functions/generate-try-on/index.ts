@@ -33,64 +33,115 @@ serve(async (req) => {
 
     console.log("Received try-on request:", { avatarUrl, productImageUrl })
 
-    // Generate try-on image with OpenAI
-    const openAIResponse = await fetch('https://api.openai.com/v1/images/generations', {
+    // Generate try-on image with Gemini
+    const geminiResponse = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') || ''
       },
       body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: `Create a realistic image of a person wearing the clothing item shown in this product image: ${productImageUrl}. 
-                 Use this image of the person: ${avatarUrl} as reference for the person's appearance.
-                 The final image should be a natural-looking photo of the person wearing the clothing item, with the same pose and background as the reference image of the person.
-                 The clothing should fit naturally and look realistic, as if the person was actually wearing it.
-                 Maintain the person's facial features exactly as they appear in the reference image.`,
-        n: 1,
-        size: "1024x1024",
-        quality: "hd"
+        contents: [{
+          parts: [
+            {
+              text: `Create a realistic image of a person wearing the clothing item shown in this product image. Use the person's image as reference for their appearance. The final image should be a natural-looking photo of the person wearing the clothing item, with the same pose and background as the reference image of the person. The clothing should fit naturally and look realistic. Maintain the person's facial features exactly as they appear in the reference image.`
+            },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: avatarUrl.startsWith('data:') 
+                  ? avatarUrl.split(',')[1] 
+                  : await fetch(avatarUrl).then(res => res.arrayBuffer()).then(buf => btoa(String.fromCharCode(...new Uint8Array(buf))))
+              }
+            },
+            {
+              inline_data: {
+                mime_type: "image/jpeg",
+                data: productImageUrl.startsWith('data:') 
+                  ? productImageUrl.split(',')[1] 
+                  : await fetch(productImageUrl).then(res => res.arrayBuffer()).then(buf => btoa(String.fromCharCode(...new Uint8Array(buf))))
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          temperature: 0.4,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 2048,
+        }
       })
-    })
+    });
 
-    if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text();
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
       let errorJson;
       
       try {
         errorJson = JSON.parse(errorText);
-        console.error('OpenAI API error (parsed):', errorJson);
+        console.error('Gemini API error (parsed):', errorJson);
       } catch (parseError) {
-        console.error('OpenAI API error (raw text):', errorText);
+        console.error('Gemini API error (raw text):', errorText);
       }
       
-      console.error('OpenAI API HTTP status:', openAIResponse.status);
-      console.error('OpenAI API status text:', openAIResponse.statusText);
+      console.error('Gemini API HTTP status:', geminiResponse.status);
+      console.error('Gemini API status text:', geminiResponse.statusText);
+      
+      // As a fallback for this demo, we'll just return the avatar image
+      // In a production environment, you'd want to handle this more gracefully
+      console.log("Using avatar as fallback due to Gemini API error");
+      
+      // Get the public URL for the avatar
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(`user-${userId}/avatar.png`)
       
       return new Response(
         JSON.stringify({ 
-          error: 'OpenAI API error', 
-          status: openAIResponse.status,
-          details: errorJson || errorText
+          tryOnImageUrl: publicUrl,
+          isPlaceholder: true
         }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
     
-    const openAIData = await openAIResponse.json()
+    const geminiData = await geminiResponse.json();
     
-    if (openAIData.error) {
-      console.error("OpenAI API error:", openAIData.error)
-      throw new Error(`OpenAI API error: ${openAIData.error.message || JSON.stringify(openAIData.error)}`)
+    if (!geminiData.candidates || geminiData.candidates.length === 0) {
+      console.error("No candidates returned from Gemini API");
+      throw new Error("No image generated by Gemini");
     }
     
-    const generatedImageUrl = openAIData.data[0].url
-    console.log("Generated image URL:", generatedImageUrl)
+    // Extract image data from Gemini response
+    let generatedImageUrl = null;
+    for (const candidate of geminiData.candidates) {
+      for (const part of candidate.content.parts) {
+        if (part.inline_data && part.inline_data.mime_type.startsWith('image/')) {
+          generatedImageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
+          break;
+        }
+      }
+      if (generatedImageUrl) break;
+    }
+    
+    if (!generatedImageUrl) {
+      console.error("No image found in Gemini response");
+      throw new Error("No image returned by Gemini");
+    }
 
-    // Download and upload the generated try-on image to Supabase storage
-    const imageResponse = await fetch(generatedImageUrl)
-    const imageBlob = await imageResponse.blob()
-    const tryOnFileName = `try-on-${userId}-${Date.now()}.png`
+    console.log("Generated image data received");
+
+    // Convert data URL to blob for upload to Supabase
+    const base64Data = generatedImageUrl.split(',')[1];
+    const binaryData = atob(base64Data);
+    const array = new Uint8Array(binaryData.length);
+    for (let i = 0; i < binaryData.length; i++) {
+      array[i] = binaryData.charCodeAt(i);
+    }
+    const imageBlob = new Blob([array], { type: 'image/png' });
+    
+    // Upload to Supabase storage
+    const tryOnFileName = `try-on-${userId}-${Date.now()}.png`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('avatars')
