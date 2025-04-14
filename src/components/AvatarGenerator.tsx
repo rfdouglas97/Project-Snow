@@ -15,8 +15,10 @@ export function AvatarGenerator() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isResizing, setIsResizing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedAvatarUrl, setGeneratedAvatarUrl] = useState<string | null>(null);
+  const [isAiGenerated, setIsAiGenerated] = useState(true);
   const [isCompleted, setIsCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -107,11 +109,19 @@ export function AvatarGenerator() {
       console.log("File uploaded to:", publicUrl);
       toast({
         title: "Upload successful",
-        description: "Your photo has been uploaded. Now generating your standardized avatar...",
+        description: "Your photo has been uploaded. Now processing your avatar...",
       });
 
-      // Call edge function to generate avatar with GPT-4o
+      // Set resizing state - this will show before the AI generation
+      setIsResizing(true);
+      
+      // Short delay to show the resizing step
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Call edge function to generate avatar
+      setIsResizing(false);
       setIsGenerating(true);
+      
       const { data, error } = await supabase.functions.invoke('generate-avatar', {
         body: { 
           imageUrl: publicUrl,
@@ -134,13 +144,16 @@ export function AvatarGenerator() {
 
       console.log("Generated avatar response:", data);
 
-      // Set the generated avatar URL
+      // Set the generated avatar URL and AI-generated status
       setGeneratedAvatarUrl(data.avatarUrl);
+      setIsAiGenerated(data.is_ai_generated !== false); // If is_ai_generated is false, set to false, otherwise true
       setIsCompleted(true);
       
       toast({
-        title: "Avatar generated",
-        description: "Your standardized avatar has been created with GPT-4o",
+        title: data.is_ai_generated === false ? "Avatar created" : "AI avatar generated",
+        description: data.is_ai_generated === false 
+          ? "Your original photo is being used as your avatar" 
+          : "Your standardized avatar has been created with AI",
         variant: "default",
       });
     } catch (error) {
@@ -159,6 +172,7 @@ export function AvatarGenerator() {
     } finally {
       setIsUploading(false);
       setIsGenerating(false);
+      setIsResizing(false);
       setUploadProgress(0);
     }
   };
@@ -176,14 +190,14 @@ export function AvatarGenerator() {
       <CardHeader>
         <CardTitle>Create Your Avatar</CardTitle>
         <CardDescription>
-          Upload a photo and we'll generate a standardized avatar with GPT-4o
+          Upload a photo and we'll generate a standardized avatar with AI
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {!isCompleted ? (
           <>
             <UploadForm 
-              isUploading={isUploading} 
+              isUploading={isUploading || isResizing} 
               isGenerating={isGenerating} 
               onFileChange={handleFileChange} 
               onUpload={handleUpload} 
@@ -195,6 +209,7 @@ export function AvatarGenerator() {
             <ProgressIndicator 
               isUploading={isUploading} 
               uploadProgress={uploadProgress} 
+              isResizing={isResizing}
               isGenerating={isGenerating}
               error={error}
             />
@@ -203,6 +218,7 @@ export function AvatarGenerator() {
           <GeneratedAvatar 
             isCompleted={isCompleted} 
             generatedAvatarUrl={generatedAvatarUrl} 
+            isAiGenerated={isAiGenerated}
             onReset={resetForm} 
           />
         )}
