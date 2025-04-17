@@ -9,7 +9,7 @@ import { ImagePreview } from "./avatar/ImagePreview";
 import { ProgressIndicator } from "./avatar/ProgressIndicator";
 import { GeneratedAvatar } from "./avatar/GeneratedAvatar";
 
-export function AvatarGenerator() {
+export default function AvatarGenerator() {
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

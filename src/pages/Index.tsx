@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUpload } from "@/components/FileUpload";
 import { AuthButtons } from "@/components/AuthButtons";
 import { ApiDemo } from "@/components/ApiDemo";
-import { AvatarGenerator } from "@/components/AvatarGenerator";
+import AvatarGenerator from "@/components/AvatarGenerator";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
