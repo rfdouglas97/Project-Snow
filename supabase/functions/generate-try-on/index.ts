@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.24.0"
@@ -11,6 +12,9 @@ const corsHeaders = {
 // Helper function to fetch image and convert to base64
 async function imageUrlToBase64(url) {
   const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image from URL ${url}: ${response.status} ${response.statusText}`);
+  }
   const blob = await response.blob();
   return blobToBase64(blob);
 }
@@ -45,6 +49,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Received request to generate-try-on function");
+    
     // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') || '',
@@ -52,52 +58,75 @@ serve(async (req) => {
     )
 
     // Initialize Google Generative AI with API key
-    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
+    const apiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not set in environment variables');
+    }
+    
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     // Parse request body
-    const { avatarUrl, productImageUrl, userId } = await req.json()
+    const { avatarUrl, productImageUrl, userId } = await req.json();
 
-    if (!avatarUrl || !productImageUrl || !userId) {
+    if (!avatarUrl) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters: avatarUrl, productImageUrl, or userId' }), 
+        JSON.stringify({ error: 'Missing required parameter: avatarUrl' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      );
     }
 
-    console.log("Received try-on request:", { avatarUrl, productImageUrl })
+    if (!productImageUrl) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameter: productImageUrl' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required parameter: userId' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log("Processing try-on request:", { avatarUrl, productImageUrl });
 
     try {
       // Convert both images to base64
+      console.log("Converting avatar image to base64");
       const avatarBase64 = await imageUrlToBase64(avatarUrl);
+      
+      console.log("Converting product image to base64");
       const productBase64 = await imageUrlToBase64(productImageUrl);
       
-      // Get the experimental Gemini model for image generation
+      // Get the Gemini model for image generation
+      // Using the latest Gemini model suitable for image generation
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash-exp-image-generation" 
+        model: "gemini-2.0-flash-exp-image-generation"
       });
+      
+      console.log("Using Gemini 2.0 Flash model for try-on generation");
       
       // Craft a precise prompt that ensures no modification of facial features
       const prompt = `
-        IMPORTANT: DO NOT ALTER THE PERSON'S BODY SHAPE, PROPORTIONS, FACIAL FEATURES, HAIR, OR FACE IN ANY WAY.
+        Task: Create a realistic virtual try-on image where the person from the first image is wearing the clothing item from the second image.
         
-        Task: Take the clothing item from the product image and render it on the person in the avatar image.
+        IMPORTANT REQUIREMENTS:
+        - PRESERVE: The person's face, hair, skin tone, and body proportions MUST remain exactly as they are in the first image
+        - DO NOT: Change facial features, expressions, hairstyle, body shape, or add accessories that aren't in the original images
+        - DO NOT: Make the person thinner, taller, or modify any physical attributes
+        - ONLY: Make the clothing item from the second image appear to be worn by the person in the first image
+        - MAINTAIN: The lighting, background and overall composition of the first image
+        - ENSURE: The clothing appears natural and properly fitted to the person's body
         
-        Specific requirements:
-        1. PRESERVE EXACTLY: Keep the person's exact face, head, hair, and body proportions from the avatar image completely unchanged
-        2. DO NOT: Change any facial features, expressions, hairstyle, body type, or add any accessories
-        3. DO NOT: Make the person thinner, taller, or modify any physical attributes at all
-        4. DO NOT: Change the pose of the person
-        5. DO NOT: Change the background
-        6. ONLY: Add the clothing item over the person's existing attire in a realistic way
-        7. ONLY: Make minimal adjustments needed to make the clothing item fit naturally on the person
-        8. Create a photorealistic image with the clothing item properly overlaid on the person
+        The final image must look like the exact same person wearing the new clothing item with absolutely no modifications to their physical appearance.
         
-        The final result should look like the original person wearing the new clothing item, with no other changes.
+        Output a high-quality, photorealistic image.
       `;
 
-      console.log('Using Gemini 2.0 Flash (Image Generation) for try-on with prompt:', prompt);
+      console.log("Sending request to Gemini with prompt:", prompt);
 
-      // Process the images
+      // Process the images with the model
       const result = await model.generateContent({
         contents: [{
           role: "user",
@@ -121,21 +150,22 @@ serve(async (req) => {
         }
       });
       
-      console.log('Gemini response received');
+      console.log('Received response from Gemini API');
       
-      // Extract the generated image from the response
       const response = await result.response;
       
       // Find the image part in the response
-      const imageData = response.candidates[0]?.content?.parts?.find(
+      const imagePart = response.candidates?.[0]?.content?.parts?.find(
         part => part.inlineData && part.inlineData.mimeType.startsWith('image/')
-      )?.inlineData?.data;
+      );
       
-      if (!imageData) {
+      if (!imagePart || !imagePart.inlineData || !imagePart.inlineData.data) {
+        console.error('Response structure:', JSON.stringify(response.candidates?.[0]?.content?.parts));
         throw new Error('No image data found in Gemini response');
       }
       
-      console.log('Generated try-on image data extracted');
+      const imageData = imagePart.inlineData.data;
+      console.log('Successfully extracted generated image data');
       
       // Convert base64 to Uint8Array for storage
       const tryOnBuffer = base64ToUint8Array(imageData);
@@ -143,6 +173,8 @@ serve(async (req) => {
       // Define path for storing the try-on image
       const tryOnFileName = `try-on-${userId}-${Date.now()}.png`;
       const tryOnPath = `try-ons/${tryOnFileName}`;
+      
+      console.log(`Uploading try-on image to storage at path: ${tryOnPath}`);
       
       // Upload the generated try-on image to Supabase storage
       const { data: uploadData, error: uploadError } = await supabase
@@ -186,7 +218,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Try-on generation error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }), 
+      JSON.stringify({ 
+        error: 'Try-on generation error', 
+        details: error.message || String(error) 
+      }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
