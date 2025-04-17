@@ -1,9 +1,7 @@
-// Modified version of your Deno Edge Function for Supabase
-// Updated to use the correct model for image generation/modification
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.24.0"
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
@@ -93,28 +91,25 @@ serve(async (req) => {
     const imageBase64 = await blobToBase64(fileData)
     console.log('Image converted to base64')
 
+    // Get the Gemini Pro Vision model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+
+    // Create the prompt for background removal and standardization
+    const prompt = `
+      Transform this photo into a professional avatar with the following specifications:
+      1. Remove the background completely
+      2. Replace with a clean, light neutral gradient background (white or light grey)
+      3. Ensure the person remains clear and centered in the frame
+      4. Frame the image as a full length photo (same length as the figure in the uploaded photo)
+      5. DO not modify or edit the facial features in any way when you make these changes
+      6. Ensure good lighting and clarity
+      7. Do not add any text, watermarks, or additional elements
+    `;
+
+    console.log('Using Gemini for avatar generation with prompt:', prompt)
+
     try {
-      // Use the experimental Gemini 2.0 Flash for image generation
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash-exp-image-generation" 
-      });
-      
-      // Create the prompt for background removal and standardization
-      const prompt = `
-        Transform this photo into a professional avatar with the following specifications:
-        1. Remove the background completely
-        2. Replace with a clean, light neutral gradient background (white or light grey)
-        3. Ensure the person remains clear and centered in the frame
-        4. Frame the image as a professional headshot showing head and shoulders
-        5. Maintain natural skin tones and realistic appearance
-        6. Ensure good lighting and clarity
-        7. Output as a high-quality image suitable for a profile picture
-        8. Do not add any text, watermarks, or additional elements
-      `;
-
-      console.log('Using Gemini 2.0 Flash (Image Generation) for avatar generation with prompt:', prompt);
-
-      // Process the image - using the correct structure for the experimental model
+      // Process the image with Gemini
       const result = await model.generateContent({
         contents: [{
           role: "user",
@@ -126,27 +121,19 @@ serve(async (req) => {
               }
             }
           ]
-        }],
-        // Enable image generation in the response
-        generationConfig: {
-          responseModalities: ["Text", "Image"]
-        }
+        }]
       });
+
+      console.log('Gemini response received')
       
-      console.log('Gemini response received');
-      
-      // Extract the generated image from the response
       const response = await result.response;
-      // Find the image part in the response
-      const imageData = response.candidates[0]?.content?.parts?.find(
-        part => part.inlineData && part.inlineData.mimeType.startsWith('image/')
-      )?.inlineData?.data;
+      const imageData = response.candidates[0]?.content?.parts?.find(part => part.inlineData)?.inlineData?.data;
       
       if (!imageData) {
         throw new Error('No image data found in Gemini response');
       }
       
-      console.log('Generated image data extracted');
+      console.log('Generated image data extracted')
       
       // Convert base64 to Uint8Array for storage
       const avatarBuffer = base64ToUint8Array(imageData);
@@ -202,12 +189,12 @@ serve(async (req) => {
         }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
-    } catch (genAIError) {
-      console.error('Gemini API error:', genAIError)
+    } catch (geminiError) {
+      console.error('Gemini API error:', geminiError)
       return new Response(
         JSON.stringify({ 
           error: 'Gemini API error', 
-          details: genAIError.message || String(genAIError)
+          details: geminiError.message || String(geminiError)
         }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
