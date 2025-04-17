@@ -50,6 +50,10 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
 
       if (data.error) {
         console.error("Generation error:", data.error);
+        // Check if the error message indicates a bucket not found issue
+        if (data.error.includes("bucket not found") || data.error.includes("not found")) {
+          throw new Error("Storage buckets not found. Please create an avatar first in the Avatar Generator.");
+        }
         throw new Error(data.error);
       }
 
