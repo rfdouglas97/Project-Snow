@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,11 +71,31 @@ const Index = () => {
         )}
 
         <Tabs defaultValue="auth" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 rounded-full p-1 bg-white">
-            <TabsTrigger value="auth" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Authentication</TabsTrigger>
-            <TabsTrigger value="storage" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Try on Products</TabsTrigger>
-            <TabsTrigger value="avatar" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">Avatar Generator</TabsTrigger>
-            <TabsTrigger value="api" className="rounded-full data-[state=active]:bg-mira-purple data-[state=active]:text-white">API Testing</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 rounded-full p-1 bg-white gap-1">
+            <TabsTrigger 
+              value="auth" 
+              className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+            >
+              Authentication
+            </TabsTrigger>
+            <TabsTrigger 
+              value="storage" 
+              className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+            >
+              Try on Products
+            </TabsTrigger>
+            <TabsTrigger 
+              value="avatar" 
+              className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+            >
+              Avatar Generator
+            </TabsTrigger>
+            <TabsTrigger 
+              value="api" 
+              className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+            >
+              API Testing
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="auth" className="mt-6">
