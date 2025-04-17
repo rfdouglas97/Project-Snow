@@ -1,11 +1,34 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Helper function to convert Blob to base64
+async function blobToBase64(blob) {
+  const buffer = await blob.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return 'data:image/jpeg;base64,' + btoa(binary);
+}
+
+// Helper function to convert base64 to Uint8Array
+function base64ToUint8Array(base64) {
+  // Remove data URL prefix if present
+  const base64String = base64.split(',')[1] || base64;
+  const binaryString = atob(base64String);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
 }
 
 serve(async (req) => {
@@ -20,6 +43,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     )
+
+    // Initialize Google Generative AI with API key
+    const genAI = new GoogleGenerativeAI(Deno.env.get('GEMINI_API_KEY') || '');
 
     // Parse request body
     const { imageUrl, userId } = await req.json()
@@ -60,148 +86,122 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
 
-    // Instead of using variations, let's use the dall-e-3 generations endpoint
-    // which can take a text prompt and is more reliable
-    console.log('Using OpenAI DALL-E 3 for avatar generation')
-    
-    // Call OpenAI Images API with text prompt
-    const openAIResponse = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: "dall-e-3",
-        prompt: "Create a professional, standardized avatar image based on this description: a simple, clean headshot with neutral background, showing just the head and shoulders, with clear facial features and good lighting. The style should be minimalist and appropriate for profile pictures.",
-        n: 1,
-        size: "1024x1024",
-        response_format: "url"
-      })
-    });
+    // Convert image to base64 for Gemini API
+    const imageBase64 = await blobToBase64(fileData)
+    console.log('Image converted to base64')
 
-    // Enhanced error handling for OpenAI API response
-    if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text();
-      let errorJson;
+    // Get the Gemini Pro Vision model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+
+    // Create the prompt for background removal and standardization
+    const prompt = `
+      Transform this photo into a professional avatar with the following specifications:
+      1. Remove the background completely
+      2. Replace with a clean, light neutral gradient background (white or light grey)
+      3. Ensure the person remains clear and centered in the frame
+      4. Frame the image as a professional headshot showing head and shoulders
+      5. Maintain natural skin tones and realistic appearance
+      6. Ensure good lighting and clarity
+      7. Output as a high-quality image suitable for a profile picture
+      8. Do not add any text, watermarks, or additional elements
+    `;
+
+    console.log('Using Gemini for avatar generation with prompt:', prompt)
+
+    try {
+      // Process the image with Gemini
+      const result = await model.generateContent({
+        contents: [{
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: {
+                mimeType: "image/jpeg",
+                data: imageBase64.split(',')[1] // Remove the data URL prefix
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "image/png"
+        }
+      });
+
+      console.log('Gemini response received')
       
-      try {
-        errorJson = JSON.parse(errorText);
-        console.error('OpenAI API error (parsed):', errorJson);
-      } catch (parseError) {
-        console.error('OpenAI API error (raw text):', errorText);
-        console.error('Parse error:', parseError);
+      const response = await result.response;
+      const imageData = response.candidates[0]?.content?.parts?.find(part => part.inlineData)?.inlineData?.data;
+      
+      if (!imageData) {
+        throw new Error('No image data found in Gemini response');
       }
       
-      console.error('OpenAI API HTTP status:', openAIResponse.status);
-      console.error('OpenAI API status text:', openAIResponse.statusText);
+      console.log('Generated image data extracted')
       
+      // Convert base64 to Uint8Array for storage
+      const avatarBuffer = base64ToUint8Array(imageData);
+
+      // Define paths for storing the avatar
+      const userFolder = `user-${userId}`
+      const avatarFileName = `${Date.now()}.png`
+      const avatarPath = `${userFolder}/${avatarFileName}`
+      
+      // Upload the generated avatar to the avatars bucket
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('avatars')
+        .upload(avatarPath, avatarBuffer, {
+          contentType: 'image/png',
+          upsert: true
+        })
+
+      if (uploadError) {
+        console.error('Error uploading avatar:', uploadError)
+        throw uploadError
+      }
+
+      console.log('Generated avatar uploaded successfully')
+
+      // Get the public URL for the uploaded avatar
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(avatarPath)
+
+      // Store metadata in user_avatars table
+      const { data: metadataData, error: metadataError } = await supabase
+        .from('user_avatars')
+        .insert({
+          user_id: userId,
+          original_image_path: `${bucketName}/${imagePath}`,
+          avatar_image_path: `avatars/${avatarPath}`
+        })
+        .select()
+
+      if (metadataError) {
+        console.error('Error storing avatar metadata:', metadataError)
+        throw metadataError
+      }
+
+      console.log('Avatar metadata stored successfully')
+      console.log('Avatar stored at:', publicUrl)
+
       return new Response(
         JSON.stringify({ 
-          error: 'OpenAI API error', 
-          status: openAIResponse.status,
-          details: errorJson || errorText
+          avatarUrl: publicUrl,
+          avatarId: metadataData?.[0]?.id
+        }), 
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    } catch (geminiError) {
+      console.error('Gemini API error:', geminiError)
+      return new Response(
+        JSON.stringify({ 
+          error: 'Gemini API error', 
+          details: geminiError.message || String(geminiError)
         }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    const openAIData = await openAIResponse.json()
-    console.log('OpenAI response received')
-    
-    // Log the entire response structure for debugging
-    console.log('Full OpenAI response structure:', JSON.stringify(openAIData))
-    
-    // Extract the generated image URL from the OpenAI Images API response
-    const generatedImageUrl = openAIData.data[0].url
-    
-    if (!generatedImageUrl) {
-      throw new Error('No image URL found in OpenAI response')
-    }
-
-    console.log('Generated image URL extracted:', generatedImageUrl)
-
-    // Download the generated avatar from the URL provided by OpenAI
-    console.log('Downloading image from URL:', generatedImageUrl)
-    const avatarResponse = await fetch(generatedImageUrl)
-    
-    // Enhanced error handling for image download
-    if (!avatarResponse.ok) {
-      console.error('Image download error status:', avatarResponse.status);
-      console.error('Image download status text:', avatarResponse.statusText);
-      
-      try {
-        const errorText = await avatarResponse.text();
-        console.error('Image download error response:', errorText);
-      } catch (e) {
-        console.error('Could not read image download error response');
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to download generated image', 
-          status: avatarResponse.status,
-          url: generatedImageUrl
-        }), 
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-    
-    const avatarBlob = await avatarResponse.blob()
-    const avatarArrayBuffer = await avatarBlob.arrayBuffer()
-    const avatarBuffer = new Uint8Array(avatarArrayBuffer)
-
-    // Define paths for storing the avatar
-    const userFolder = `user-${userId}`
-    const avatarFileName = `${Date.now()}.png`
-    const avatarPath = `${userFolder}/${avatarFileName}`
-    
-    // Upload the generated avatar to the avatars bucket
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('avatars')
-      .upload(avatarPath, avatarBuffer, {
-        contentType: 'image/png',
-        upsert: true
-      })
-
-    if (uploadError) {
-      console.error('Error uploading avatar:', uploadError)
-      throw uploadError
-    }
-
-    console.log('Generated avatar uploaded successfully')
-
-    // Get the public URL for the uploaded avatar
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(avatarPath)
-
-    // Store metadata in user_avatars table
-    const { data: metadataData, error: metadataError } = await supabase
-      .from('user_avatars')
-      .insert({
-        user_id: userId,
-        original_image_path: `${bucketName}/${imagePath}`,
-        avatar_image_path: `avatars/${avatarPath}`
-      })
-      .select()
-
-    if (metadataError) {
-      console.error('Error storing avatar metadata:', metadataError)
-      throw metadataError
-    }
-
-    console.log('Avatar metadata stored successfully')
-    console.log('Avatar stored at:', publicUrl)
-
-    return new Response(
-      JSON.stringify({ 
-        avatarUrl: publicUrl,
-        avatarId: metadataData?.[0]?.id
-      }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
   } catch (error) {
     console.error('Avatar generation error:', error)
     return new Response(
