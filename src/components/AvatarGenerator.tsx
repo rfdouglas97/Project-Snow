@@ -118,20 +118,23 @@ export default function AvatarGenerator() {
       setIsGenerating(true);
       
       try {
-        const { data, error } = await supabase.functions.invoke('generate-avatar', {
+        console.log("Starting avatar generation request...");
+        const { data, error: functionError } = await supabase.functions.invoke('generate-avatar', {
           body: { 
             imageUrl: publicUrl,
             userId: user.id 
           }
         });
 
-        if (error) {
-          console.error("Function error:", error);
-          throw new Error(`Edge function error: ${error.message}`);
+        console.log("Full function response:", { data, functionError });
+
+        if (functionError) {
+          console.error("Function invocation error:", functionError);
+          throw new Error(`Edge function error: ${functionError.message}`);
         }
 
         // Check if the response contains an error
-        if (data.error) {
+        if (data?.error) {
           console.error("Generation error:", data.error, data.details);
           throw new Error(`Image generation error: ${data.error}. ${data.details ? JSON.stringify(data.details) : ''}`);
         }
@@ -148,31 +151,32 @@ export default function AvatarGenerator() {
           variant: "default",
         });
       } catch (functionError) {
-        console.error("Error calling edge function:", functionError);
+        console.error("Detailed error during edge function call:", functionError);
         
-        // Try to check if buckets exist
-        try {
-          const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-          
-          if (bucketsError) {
-            console.error("Error listing buckets:", bucketsError);
-          } else {
-            console.log("Available buckets:", buckets.map(b => b.name).join(", "));
-            
-            if (!buckets.some(b => b.name === 'user_uploads') || !buckets.some(b => b.name === 'avatars')) {
-              setError("Storage buckets not found. Please contact support to set up the required storage buckets.");
-              throw new Error("Required storage buckets are missing");
-            }
-          }
-        } catch (storageError) {
-          console.error("Error checking storage:", storageError);
-        }
+        // Capture and display more specific error information
+        const errorMessage = functionError instanceof Error 
+          ? functionError.message 
+          : 'Unknown error occurred during avatar generation';
         
-        throw functionError;
+        setError(errorMessage);
+        
+        toast({
+          title: "Generation failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+
+        // Log additional context about the supabase functions configuration
+        console.log("Supabase Functions Configuration:", {
+          projectRef: supabase.supabaseClient.supabaseKey,
+          functionsRegion: import.meta.env.VITE_SUPABASE_FUNCTIONS_REGION || 'Unknown'
+        });
       }
     } catch (error) {
-      console.error("Error during avatar generation:", error);
-      const errorMessage = error.message || "There was an error generating your avatar";
+      console.error("Comprehensive error during avatar generation:", error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "There was an unexpected error generating your avatar";
       
       setError(errorMessage);
       
