@@ -94,10 +94,9 @@ serve(async (req) => {
     console.log('Image converted to base64')
 
     try {
-      // For image editing using the proper approach with the @google/generative-ai package
-      // Option 1: Using the ImageModel directly (if supported in your SDK version)
-      const imageModel = genAI.getImageGenerationModel({
-        model: "imagen-3.0-generate-001" // Correct model name for imagen in latest SDK 
+      // Use the experimental Gemini 2.0 Flash for image generation
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.0-flash-exp-image-generation" 
       });
       
       // Create the prompt for background removal and standardization
@@ -113,29 +112,40 @@ serve(async (req) => {
         8. Do not add any text, watermarks, or additional elements
       `;
 
-      console.log('Using Imagen for avatar generation with prompt:', prompt);
+      console.log('Using Gemini 2.0 Flash (Image Generation) for avatar generation with prompt:', prompt);
 
-      // Process the image 
-      const result = await imageModel.generateImages({
-        prompt: prompt,
-        inputImage: {
-          inlineData: {
-            data: imageBase64.split(',')[1], // Remove the data URL prefix
-            mimeType: "image/jpeg"
-          }
-        },
-        outputImageFormat: "png", 
-        aspectRatio: "1:1"
+      // Process the image - using the correct structure for the experimental model
+      const result = await model.generateContent({
+        contents: [{
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: {
+                mimeType: "image/jpeg",
+                data: imageBase64.split(',')[1] // Remove the data URL prefix
+              }
+            }
+          ]
+        }],
+        // Enable image generation in the response
+        generationConfig: {
+          responseModalities: ["Text", "Image"]
+        }
       });
       
-      console.log('Imagen response received');
+      console.log('Gemini response received');
       
-      // Get the generated image data
-      if (!result.images || result.images.length === 0) {
-        throw new Error('No images were generated');
+      // Extract the generated image from the response
+      const response = await result.response;
+      // Find the image part in the response
+      const imageData = response.candidates[0]?.content?.parts?.find(
+        part => part.inlineData && part.inlineData.mimeType.startsWith('image/')
+      )?.inlineData?.data;
+      
+      if (!imageData) {
+        throw new Error('No image data found in Gemini response');
       }
       
-      const imageData = result.images[0].data;
       console.log('Generated image data extracted');
       
       // Convert base64 to Uint8Array for storage
@@ -193,10 +203,10 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     } catch (genAIError) {
-      console.error('Image generation API error:', genAIError)
+      console.error('Gemini API error:', genAIError)
       return new Response(
         JSON.stringify({ 
-          error: 'Image generation API error', 
+          error: 'Gemini API error', 
           details: genAIError.message || String(genAIError)
         }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
