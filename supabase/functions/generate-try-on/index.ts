@@ -42,6 +42,40 @@ function base64ToUint8Array(base64) {
   return bytes;
 }
 
+// Helper function to ensure buckets exist
+async function ensureBucketsExist(supabase) {
+  const requiredBuckets = ['avatars', 'product_images'];
+  
+  for (const bucketName of requiredBuckets) {
+    // Check if bucket exists
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error(`Error checking for bucket ${bucketName}:`, listError);
+      continue;
+    }
+    
+    const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+    
+    if (!bucketExists) {
+      console.log(`Creating bucket: ${bucketName}`);
+      const { error: createError } = await supabase.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+      });
+      
+      if (createError) {
+        console.error(`Error creating bucket ${bucketName}:`, createError);
+      } else {
+        console.log(`Successfully created bucket: ${bucketName}`);
+      }
+    } else {
+      console.log(`Bucket ${bucketName} already exists`);
+    }
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -56,6 +90,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') || '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
     )
+
+    // Ensure required buckets exist
+    await ensureBucketsExist(supabase);
 
     // Initialize Google Generative AI with API key
     const apiKey = Deno.env.get('GEMINI_API_KEY');

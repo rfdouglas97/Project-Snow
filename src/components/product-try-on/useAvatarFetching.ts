@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
 export function useAvatarFetching() {
-  const { toast } = useToast();
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const fetchUserAvatar = async () => {
     setIsLoading(true);
@@ -20,80 +20,62 @@ export function useAvatarFetching() {
           description: "Please sign in to use the try-on feature",
           variant: "destructive",
         });
-        setIsLoading(false);
         return false;
       }
 
-      // First try to get the latest avatar from the database
-      const { data: avatarData, error: avatarError } = await supabase
-        .from('user_avatars')
-        .select('avatar_image_path')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Check if avatars bucket exists
+      try {
+        // Try to list from avatars bucket
+        const { data: storageData, error: storageError } = await supabase
+          .storage
+          .from('avatars')
+          .list(`user-${user.id}`, {
+            limit: 1,
+            sortBy: { column: 'created_at', order: 'desc' }
+          });
 
-      if (avatarError) {
-        console.error("Database error:", avatarError);
-        throw avatarError;
-      }
+        if (storageError) {
+          // If it's a 'Bucket not found' error, display a specific message
+          if (storageError.message.includes("bucket not found") || 
+              storageError.message.includes("not found") ||
+              storageError.code === "404") {
+            toast({
+              title: "Setup required",
+              description: "Please create an avatar first in the Avatar Generator",
+              variant: "destructive",
+            });
+            console.error("Storage bucket not found:", storageError);
+            return false;
+          }
+        }
 
-      if (avatarData?.avatar_image_path) {
-        console.log("Found avatar path in database:", avatarData.avatar_image_path);
-        
-        // Path format in DB is 'avatars/user-{userId}/{filename}.png'
-        const pathParts = avatarData.avatar_image_path.split('/');
-        const bucketName = pathParts[0];
-        const avatarPath = pathParts.slice(1).join('/');
-        
+        // If no data or empty array, no avatar exists
+        if (!storageData || storageData.length === 0) {
+          toast({
+            title: "No avatar found",
+            description: "Please create an avatar first in the Avatar Generator",
+            variant: "destructive",
+          });
+          return false;
+        }
+
         // Get public URL of the avatar
-        const { data: { publicUrl } } = supabase.storage
-          .from(bucketName)
-          .getPublicUrl(avatarPath);
+        const avatarPath = storageData[0].name;
+        const avatarUrl = supabase.storage
+          .from('avatars')
+          .getPublicUrl(`user-${user.id}/${avatarPath}`).data.publicUrl;
 
-        console.log("Retrieved avatar URL:", publicUrl);
-        setUserAvatar(publicUrl);
-        setIsLoading(false);
+        setUserAvatar(avatarUrl);
         return true;
-      }
-
-      // Fallback to directly checking storage if no database record found
-      const userFolder = `user-${user.id}`;
-      
-      // Get user's latest avatar from storage
-      const { data: storageData, error: storageError } = await supabase
-        .storage
-        .from('avatars')
-        .list(userFolder, {
-          limit: 1,
-          sortBy: { column: 'created_at', order: 'desc' }
-        });
-
-      if (storageError) {
-        console.error("Storage error:", storageError);
-        throw storageError;
-      }
-
-      if (!storageData || storageData.length === 0) {
+      } catch (error) {
+        console.error("Storage operation error:", error);
         toast({
-          title: "No avatar found",
-          description: "Please create an avatar first in the Avatar Generator",
+          title: "Storage error",
+          description: "Could not access your avatars. Please try again later.",
           variant: "destructive",
         });
-        setIsLoading(false);
         return false;
       }
-
-      // Get public URL of the avatar
-      const avatarPath = `${userFolder}/${storageData[0].name}`;
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(avatarPath);
-
-      console.log("Found user avatar at:", publicUrl);
-      setUserAvatar(publicUrl);
-      setIsLoading(false);
-      return true;
     } catch (error) {
       console.error("Error fetching user avatar:", error);
       toast({
@@ -101,10 +83,16 @@ export function useAvatarFetching() {
         description: "Could not retrieve your avatar image",
         variant: "destructive",
       });
-      setIsLoading(false);
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return { userAvatar, fetchUserAvatar, setUserAvatar, isLoading };
+  return {
+    userAvatar,
+    isLoading,
+    fetchUserAvatar,
+    setUserAvatar
+  };
 }
