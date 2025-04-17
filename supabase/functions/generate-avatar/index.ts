@@ -91,8 +91,8 @@ serve(async (req) => {
     const imageBase64 = await blobToBase64(fileData)
     console.log('Image converted to base64')
 
-    // Get the Gemini Pro Vision model - UPDATED TO USE NEWER MODEL
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Get the Gemini Pro Vision model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
 
     // Create the prompt for background removal and standardization
     const prompt = `
