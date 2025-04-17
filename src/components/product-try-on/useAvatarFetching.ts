@@ -37,8 +37,7 @@ export function useAvatarFetching() {
         if (storageError) {
           // If it's a 'Bucket not found' error, display a specific message
           if (storageError.message.includes("bucket not found") || 
-              storageError.message.includes("not found") ||
-              storageError.code === "404") {
+              storageError.message.includes("not found")) {
             toast({
               title: "Setup required",
               description: "Please create an avatar first in the Avatar Generator",
