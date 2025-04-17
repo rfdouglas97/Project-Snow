@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -167,7 +168,7 @@ export default function AvatarGenerator() {
 
         // Log additional information about the environment
         console.log("Supabase Functions Information:", {
-          projectUrl: supabase.supabaseUrl || 'Unknown'
+          projectUrl: supabase.supabaseUrl?.toString() || 'Unknown'
         });
       }
     } catch (error) {
