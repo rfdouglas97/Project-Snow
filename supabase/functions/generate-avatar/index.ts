@@ -94,7 +94,7 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.0-flash-exp",
       generationConfig: {
-        responseModalities: ["TEXT", "IMAGE"] // Request both text and image in response
+        response_modalities: ["TEXT", "IMAGE"] // Request both text and image in response
       }
     });
 
@@ -129,7 +129,7 @@ serve(async (req) => {
           ]
         }],
         generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"]
+          response_modalities: ["TEXT", "IMAGE"]
         }
       });
 
