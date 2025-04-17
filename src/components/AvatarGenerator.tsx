@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -33,7 +32,6 @@ export default function AvatarGenerator() {
       setPreviewUrl(null);
     }
     
-    // Reset states when a new file is selected
     setGeneratedAvatarUrl(null);
     setIsCompleted(false);
     setError(null);
@@ -53,7 +51,6 @@ export default function AvatarGenerator() {
       setIsUploading(true);
       setError(null);
       
-      // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -64,7 +61,6 @@ export default function AvatarGenerator() {
         });
       }, 300);
 
-      // Get current user
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError) {
@@ -82,10 +78,8 @@ export default function AvatarGenerator() {
         return;
       }
 
-      // Create user folder if it doesn't exist
       const userFolder = `user-${user.id}`;
       
-      // Upload file to user_uploads bucket
       const fileName = `${userFolder}/${Date.now()}-${file.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('user_uploads')
@@ -103,7 +97,6 @@ export default function AvatarGenerator() {
 
       setUploadProgress(100);
 
-      // Get public URL of uploaded file
       const { data: { publicUrl } } = supabase.storage
         .from('user_uploads')
         .getPublicUrl(fileName);
@@ -114,7 +107,6 @@ export default function AvatarGenerator() {
         description: "Your photo has been uploaded. Now generating your standardized avatar...",
       });
 
-      // Call edge function to generate avatar with GPT-4o
       setIsGenerating(true);
       
       try {
@@ -133,7 +125,6 @@ export default function AvatarGenerator() {
           throw new Error(`Edge function error: ${functionError.message}`);
         }
 
-        // Check if the response contains an error
         if (data?.error) {
           console.error("Generation error:", data.error, data.details);
           throw new Error(`Image generation error: ${data.error}. ${data.details ? JSON.stringify(data.details) : ''}`);
@@ -141,7 +132,6 @@ export default function AvatarGenerator() {
 
         console.log("Generated avatar response:", data);
 
-        // Set the generated avatar URL
         setGeneratedAvatarUrl(data.avatarUrl);
         setIsCompleted(true);
         
@@ -153,7 +143,6 @@ export default function AvatarGenerator() {
       } catch (functionError) {
         console.error("Detailed error during edge function call:", functionError);
         
-        // Capture and display more specific error information
         const errorMessage = functionError instanceof Error 
           ? functionError.message 
           : 'Unknown error occurred during avatar generation';
@@ -166,9 +155,8 @@ export default function AvatarGenerator() {
           variant: "destructive",
         });
 
-        // Log additional information about the environment
         console.log("Supabase Functions Information:", {
-          projectUrl: supabase.supabaseUrl?.toString() || 'Unknown'
+          projectUrl: "Using Supabase project"
         });
       }
     } catch (error) {
