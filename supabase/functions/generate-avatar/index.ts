@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { GoogleGenerativeAI, Modality } from "https://esm.sh/@google/generative-ai@0.2.0"
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.2.0"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
@@ -113,46 +113,47 @@ serve(async (req) => {
 
       console.log('Using Gemini 2.0 Flash Exp Image Generation model');
 
-      // Generate content with the model
-      const response = await genAI.models.generateContent({
-        model: "gemini-2.0-flash-exp-image-generation",
-        contents: contents,
-        config: {
-          responseModalities: [Modality.TEXT, Modality.IMAGE],
-        },
+      // Try using the more direct client API approach
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp-image-generation"
+      });
+      
+      // Set the generation config when calling generateContent
+      const result = await model.generateContent({
+        contents: [{
+          role: "user",
+          parts: contents
+        }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"]
+        }
       });
 
       console.log('Gemini response received');
-      
-      // Extract the image data from the response
-      let imageData = null;
-      let responseImage = null;
+      const response = await result.response;
       
       // Log the response structure for debugging
-      console.log('Response structure:', JSON.stringify({
-        candidates: response.candidates ? 'Has candidates' : 'No candidates',
-        candidatesLength: response.candidates ? response.candidates.length : 0,
-        contentParts: response.candidates && response.candidates[0] && response.candidates[0].content ? 
-                      'Has content parts' : 'No content parts'
-      }));
+      console.log('Response received, checking for content parts');
       
-      // Process the response parts
-      if (response.candidates && response.candidates.length > 0 &&
-          response.candidates[0].content && response.candidates[0].content.parts) {
-        
-        for (const part of response.candidates[0].content.parts) {
-          if (part.text) {
-            console.log('Text response:', part.text.substring(0, 100) + '...');
-          } else if (part.inlineData) {
-            console.log(`Found image of type ${part.inlineData.mimeType}`);
-            responseImage = part.inlineData.data;
-            break;
-          }
+      // Extract the image data from the response
+      let responseImage = null;
+      const parts = response.candidates?.[0]?.content?.parts || response.parts || [];
+      
+      console.log(`Found ${parts.length} parts in response`);
+      
+      for (const part of parts) {
+        if (part.text) {
+          console.log('Text response:', part.text.substring(0, 100) + '...');
+        } else if (part.inlineData) {
+          console.log(`Found image of type ${part.inlineData.mimeType}`);
+          responseImage = part.inlineData.data;
+          break;
         }
       }
       
       if (!responseImage) {
         console.error('No image found in response parts');
+        console.error('Response structure:', JSON.stringify(response).substring(0, 1000));
         throw new Error('No image data found in Gemini response');
       }
       
