@@ -140,7 +140,7 @@ export default function AvatarGenerator() {
       
       toast({
         title: "Avatar generated",
-        description: "Your standardized avatar has been created with GPT-4o",
+        description: "Your standardized avatar has been created.",
         variant: "default",
       });
     } catch (error) {
