@@ -101,7 +101,7 @@ serve(async (req) => {
       
       // Create the prompt for background removal and standardization
       const prompt = `
-        Transform this photo into a professional avatar with the following specifications:
+        Transform this photo into a professional avatar with the following specifications. Ensure the face looks exactly as it did in the input image:
         1. Remove the background completely
         2. Replace with a clean, light neutral gradient background (white or light grey)
         3. Ensure the person remains clear and centered in the frame
