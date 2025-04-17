@@ -166,10 +166,9 @@ export default function AvatarGenerator() {
           variant: "destructive",
         });
 
-        // Log additional context about the supabase functions configuration
-        console.log("Supabase Functions Configuration:", {
-          projectRef: supabase.supabaseClient.supabaseKey,
-          functionsRegion: import.meta.env.VITE_SUPABASE_FUNCTIONS_REGION || 'Unknown'
+        // Log additional information about the environment (without accessing non-existent properties)
+        console.log("Supabase Functions Information:", {
+          projectUrl: import.meta.env.VITE_SUPABASE_URL || 'Unknown'
         });
       }
     } catch (error) {
