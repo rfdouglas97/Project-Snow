@@ -23,8 +23,33 @@ export function useAvatarFetching() {
         return false;
       }
 
-      // Check if avatars bucket exists
+      // Check for avatars bucket
       try {
+        // Check if buckets exist first
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+        
+        if (bucketsError) {
+          console.error("Error checking buckets:", bucketsError);
+          toast({
+            title: "Storage error",
+            description: "Could not access storage. Please try again later.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        // Check if avatars bucket exists
+        const avatarsBucketExists = buckets.some(bucket => bucket.name === 'avatars');
+        if (!avatarsBucketExists) {
+          toast({
+            title: "Setup required",
+            description: "Please create an avatar first in the Avatar Generator",
+            variant: "destructive",
+          });
+          console.log("Avatars bucket not found. Creating an avatar will create the necessary storage.");
+          return false;
+        }
+
         // Try to list from avatars bucket
         const { data: storageData, error: storageError } = await supabase
           .storage
