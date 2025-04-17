@@ -1,7 +1,6 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.1.3"
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.2.0" // Updated to newer version
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
@@ -91,8 +90,8 @@ serve(async (req) => {
     const imageBase64 = await blobToBase64(fileData)
     console.log('Image converted to base64')
 
-    // Get the Gemini Pro Vision model
-    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+    // Get the Gemini 1.5 Flash model instead of the deprecated gemini-pro-vision
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     // Create the prompt for background removal and standardization
     const prompt = `
@@ -110,27 +109,61 @@ serve(async (req) => {
     console.log('Using Gemini for avatar generation with prompt:', prompt)
 
     try {
+      // Set up generation config for image output
+      const generationConfig = {
+        generationConfig: {
+          responseFormat: "data_uri" // Explicitly request data URI format for images
+        }
+      };
+
       // Process the image with Gemini
-      const result = await model.generateContent({
-        contents: [{
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: {
-                mimeType: "image/jpeg",
-                data: imageBase64.split(',')[1] // Remove the data URL prefix
-              }
-            }
-          ]
-        }]
-      });
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: imageBase64.split(',')[1] // Remove the data URL prefix
+          }
+        }
+      ], generationConfig);
 
       console.log('Gemini response received')
       
       const response = await result.response;
-      const imageData = response.candidates[0]?.content?.parts?.find(part => part.inlineData)?.inlineData?.data;
+      // The response structure might be different in gemini-1.5-flash
+      // Let's log the structure to help troubleshoot if needed
+      console.log('Response structure:', JSON.stringify(response.text().substring(0, 100) + '...'))
+      
+      // Extract image data from the response
+      // The response format has changed in the newer model
+      let imageData;
+      try {
+        // Try to get the image as a data URI directly from the text
+        const responseText = response.text();
+        
+        // Find data URI pattern in the response
+        const dataUriMatch = responseText.match(/data:image\/[^;]+;base64,[^"]+/);
+        if (dataUriMatch) {
+          imageData = dataUriMatch[0];
+          console.log('Found data URI in response');
+        } else {
+          // If no direct data URI, check if we have parts with inline data
+          const parts = response.candidates?.[0]?.content?.parts;
+          if (parts) {
+            const imagePart = parts.find(part => part.inlineData);
+            if (imagePart?.inlineData?.data) {
+              imageData = `data:${imagePart.inlineData.mimeType || 'image/png'};base64,${imagePart.inlineData.data}`;
+              console.log('Found inline data in response parts');
+            }
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing Gemini response:', parseError);
+        throw new Error('Failed to parse image data from Gemini response');
+      }
       
       if (!imageData) {
+        console.error('Response content:', response);
         throw new Error('No image data found in Gemini response');
       }
       
