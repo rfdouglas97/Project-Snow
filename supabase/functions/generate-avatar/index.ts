@@ -1,6 +1,9 @@
+// Modified version of your Deno Edge Function for Supabase
+// Updated to use the correct model for image generation/modification
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
-import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.2.0"
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.24.0"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
 const corsHeaders = {
@@ -16,7 +19,7 @@ async function blobToBase64(blob) {
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return btoa(binary); // Return just the base64 string without data URI prefix
+  return 'data:image/jpeg;base64,' + btoa(binary);
 }
 
 // Helper function to convert base64 to Uint8Array
@@ -86,95 +89,62 @@ serve(async (req) => {
     
     console.log('Original file downloaded successfully')
 
-    // Convert image to base64 for Gemini API (without data URI prefix)
-    const base64Image = await blobToBase64(fileData)
+    // Convert image to base64 for Gemini API
+    const imageBase64 = await blobToBase64(fileData)
     console.log('Image converted to base64')
 
-    // Create the prompt for background removal and standardization
-    const prompt = `
-      Transform this photo into a professional avatar with the following specifications:
-      1. Background completely removed
-      2. Replace with a clean, light neutral gradient background (white or light grey)
-      3. Person centered in the frame
-      4. Professional headshot framing (head and shoulders)
-      5. Natural skin tones and realistic appearance
-      6. Good lighting and clarity
-      7. Output as a high-quality image suitable for a profile picture
-      8. Do not add any text, watermarks, or additional elements
-      
-      Include an image in your response.
-    `;
-
     try {
-      // Get the model with the experimental image generation capability
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp-image-generation"
+      // For image editing using the proper approach with the @google/generative-ai package
+      // Option 1: Using the ImageModel directly (if supported in your SDK version)
+      const imageModel = genAI.getImageGenerationModel({
+        model: "imagen-3.0-generate-001" // Correct model name for imagen in latest SDK 
       });
       
-      console.log('Using Gemini 2.0 Flash Exp Image Generation model with prompt:', prompt);
-      
-      // Generate content with simpler configuration
-      const result = await model.generateContent({
-        contents: [{
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: {
-                mimeType: "image/jpeg",
-                data: base64Image
-              }
-            }
-          ]
-        }]
-      });
+      // Create the prompt for background removal and standardization
+      const prompt = `
+        Transform this photo into a professional avatar with the following specifications:
+        1. Remove the background completely
+        2. Replace with a clean, light neutral gradient background (white or light grey)
+        3. Ensure the person remains clear and centered in the frame
+        4. Frame the image as a professional headshot showing head and shoulders
+        5. Maintain natural skin tones and realistic appearance
+        6. Ensure good lighting and clarity
+        7. Output as a high-quality image suitable for a profile picture
+        8. Do not add any text, watermarks, or additional elements
+      `;
 
-      console.log('Gemini response received');
-      const response = await result.response;
+      console.log('Using Imagen for avatar generation with prompt:', prompt);
+
+      // Process the image 
+      const result = await imageModel.generateImages({
+        prompt: prompt,
+        inputImage: {
+          inlineData: {
+            data: imageBase64.split(',')[1], // Remove the data URL prefix
+            mimeType: "image/jpeg"
+          }
+        },
+        outputImageFormat: "png", 
+        aspectRatio: "1:1"
+      });
       
-      // Log the response structure for debugging
-      console.log('Response received, checking for content parts');
+      console.log('Imagen response received');
       
-      // Extract the image data from the response
-      let responseImage = null;
-      const parts = response.candidates?.[0]?.content?.parts || response.parts || [];
-      
-      console.log(`Found ${parts.length} parts in response`);
-      
-      // Look for image data in the response parts
-      for (const part of parts) {
-        if (part.text) {
-          console.log('Text response:', part.text.substring(0, 100) + '...');
-        } else if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')) {
-          console.log(`Found image of type ${part.inlineData.mimeType}`);
-          responseImage = part.inlineData.data;
-          break;
-        }
+      // Get the generated image data
+      if (!result.images || result.images.length === 0) {
+        throw new Error('No images were generated');
       }
       
-      if (!responseImage) {
-        // If we didn't find image data in the standard location, try looking for it in the text
-        // Some models might return images as data URIs embedded in text
-        const text = response.text?.() || '';
-        const dataUriMatch = text.match(/data:image\/[^;]+;base64,[^"'\s]+/);
-        if (dataUriMatch) {
-          responseImage = dataUriMatch[0].split(',')[1]; // Remove the data URI prefix
-          console.log('Found image data URI in text response');
-        } else {
-          console.error('No image found in response');
-          console.error('Response structure:', JSON.stringify(response).substring(0, 1000));
-          throw new Error('No image data found in Gemini response');
-        }
-      }
-      
+      const imageData = result.images[0].data;
       console.log('Generated image data extracted');
       
       // Convert base64 to Uint8Array for storage
-      const avatarBuffer = base64ToUint8Array(responseImage);
+      const avatarBuffer = base64ToUint8Array(imageData);
 
       // Define paths for storing the avatar
-      const userFolder = `user-${userId}`;
-      const avatarFileName = `${Date.now()}.png`;
-      const avatarPath = `${userFolder}/${avatarFileName}`;
+      const userFolder = `user-${userId}`
+      const avatarFileName = `${Date.now()}.png`
+      const avatarPath = `${userFolder}/${avatarFileName}`
       
       // Upload the generated avatar to the avatars bucket
       const { data: uploadData, error: uploadError } = await supabase
@@ -183,19 +153,19 @@ serve(async (req) => {
         .upload(avatarPath, avatarBuffer, {
           contentType: 'image/png',
           upsert: true
-        });
+        })
 
       if (uploadError) {
-        console.error('Error uploading avatar:', uploadError);
-        throw uploadError;
+        console.error('Error uploading avatar:', uploadError)
+        throw uploadError
       }
 
-      console.log('Generated avatar uploaded successfully');
+      console.log('Generated avatar uploaded successfully')
 
       // Get the public URL for the uploaded avatar
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(avatarPath);
+        .getPublicUrl(avatarPath)
 
       // Store metadata in user_avatars table
       const { data: metadataData, error: metadataError } = await supabase
@@ -205,15 +175,15 @@ serve(async (req) => {
           original_image_path: `${bucketName}/${imagePath}`,
           avatar_image_path: `avatars/${avatarPath}`
         })
-        .select();
+        .select()
 
       if (metadataError) {
-        console.error('Error storing avatar metadata:', metadataError);
-        throw metadataError;
+        console.error('Error storing avatar metadata:', metadataError)
+        throw metadataError
       }
 
-      console.log('Avatar metadata stored successfully');
-      console.log('Avatar stored at:', publicUrl);
+      console.log('Avatar metadata stored successfully')
+      console.log('Avatar stored at:', publicUrl)
 
       return new Response(
         JSON.stringify({ 
@@ -221,22 +191,22 @@ serve(async (req) => {
           avatarId: metadataData?.[0]?.id
         }), 
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    } catch (geminiError) {
-      console.error('Gemini API error:', geminiError);
+      )
+    } catch (genAIError) {
+      console.error('Image generation API error:', genAIError)
       return new Response(
         JSON.stringify({ 
-          error: 'Gemini API error', 
-          details: geminiError.message || String(geminiError)
+          error: 'Image generation API error', 
+          details: genAIError.message || String(genAIError)
         }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      )
     }
   } catch (error) {
-    console.error('Avatar generation error:', error);
+    console.error('Avatar generation error:', error)
     return new Response(
       JSON.stringify({ error: error.message }), 
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
   }
-});
+})
