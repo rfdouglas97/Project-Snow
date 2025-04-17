@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Check, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface GeneratedAvatarProps {
   isCompleted: boolean;
@@ -20,64 +20,38 @@ export function GeneratedAvatar({
 }: GeneratedAvatarProps) {
   const { toast } = useToast();
   const [isSaving, setSaving] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  
+  // Add cache-busting parameter to the image URL
+  useEffect(() => {
+    if (generatedAvatarUrl) {
+      const cacheBuster = `?t=${Date.now()}`;
+      const urlWithCacheBuster = generatedAvatarUrl.includes('?') 
+        ? `${generatedAvatarUrl}&cb=${Date.now()}` 
+        : `${generatedAvatarUrl}${cacheBuster}`;
+      setImageUrl(urlWithCacheBuster);
+    } else {
+      setImageUrl(null);
+    }
+  }, [generatedAvatarUrl]);
   
   if (!isCompleted) return null;
   
-  const handleSaveAvatar = async () => {
-    if (!generatedAvatarUrl) {
-      toast({
-        title: "No avatar to save",
-        description: "Please generate an avatar first",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setSaving(true);
-    
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to save your avatar",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      toast({
-        title: "Avatar saved",
-        description: "Your avatar is ready to use in the Try-On feature",
-      });
-      
-      // The actual saving happens in the generate-avatar function when it creates
-      // the avatar, so we don't need to do anything additional here
-      
-    } catch (error) {
-      console.error("Error saving avatar:", error);
-      toast({
-        title: "Error saving avatar",
-        description: "Could not save your avatar",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Since the avatar is already saved during generation in the edge function,
+  // the save button is redundant. We're removing the handleSaveAvatar function 
+  // and simplifying the UI to just show the generated image with a "Try Again" button.
   
   return (
     <div className="space-y-4">
       <div className="text-center font-medium">Your Full-Body Avatar</div>
       <div className="flex justify-center">
-        {generatedAvatarUrl ? (
+        {imageUrl ? (
           <div className="h-96 w-full max-w-md rounded-md overflow-hidden border">
             <img 
-              src={generatedAvatarUrl} 
+              src={imageUrl} 
               alt="Generated Avatar" 
               className="object-contain w-full h-full"
+              loading="eager"
             />
           </div>
         ) : (
@@ -93,12 +67,11 @@ export function GeneratedAvatar({
           Try Again
         </Button>
         <Button 
-          className="flex-1 gap-2" 
-          onClick={handleSaveAvatar}
-          disabled={isSaving || !generatedAvatarUrl}
+          className="flex-1 gap-2"
+          disabled={true}
         >
           <Check className="h-4 w-4" />
-          {isSaving ? "Saving..." : "Save Avatar"}
+          Avatar Saved
         </Button>
       </div>
     </div>

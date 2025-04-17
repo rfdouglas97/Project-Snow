@@ -65,7 +65,11 @@ export default function AvatarGenerator() {
       }, 300);
 
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
       
       if (!user) {
         toast({
@@ -112,44 +116,65 @@ export default function AvatarGenerator() {
 
       // Call edge function to generate avatar with GPT-4o
       setIsGenerating(true);
-      const { data, error } = await supabase.functions.invoke('generate-avatar', {
-        body: { 
-          imageUrl: publicUrl,
-          userId: user.id 
-        }
-      });
-
-      if (error) {
-        console.error("Function error:", error);
-        setError(`Edge function error: ${error.message}`);
-        throw error;
-      }
-
-      // Check if the response contains an error
-      if (data.error) {
-        console.error("Generation error:", data.error, data.details);
-        setError(`Image generation error: ${data.error}. ${data.details ? JSON.stringify(data.details) : ''}`);
-        throw new Error(data.error);
-      }
-
-      console.log("Generated avatar response:", data);
-
-      // Set the generated avatar URL
-      setGeneratedAvatarUrl(data.avatarUrl);
-      setIsCompleted(true);
       
-      toast({
-        title: "Avatar generated",
-        description: "Your standardized avatar has been created.",
-        variant: "default",
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-avatar', {
+          body: { 
+            imageUrl: publicUrl,
+            userId: user.id 
+          }
+        });
+
+        if (error) {
+          console.error("Function error:", error);
+          throw new Error(`Edge function error: ${error.message}`);
+        }
+
+        // Check if the response contains an error
+        if (data.error) {
+          console.error("Generation error:", data.error, data.details);
+          throw new Error(`Image generation error: ${data.error}. ${data.details ? JSON.stringify(data.details) : ''}`);
+        }
+
+        console.log("Generated avatar response:", data);
+
+        // Set the generated avatar URL
+        setGeneratedAvatarUrl(data.avatarUrl);
+        setIsCompleted(true);
+        
+        toast({
+          title: "Avatar generated",
+          description: "Your standardized avatar has been created.",
+          variant: "default",
+        });
+      } catch (functionError) {
+        console.error("Error calling edge function:", functionError);
+        
+        // Try to check if buckets exist
+        try {
+          const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+          
+          if (bucketsError) {
+            console.error("Error listing buckets:", bucketsError);
+          } else {
+            console.log("Available buckets:", buckets.map(b => b.name).join(", "));
+            
+            if (!buckets.some(b => b.name === 'user_uploads') || !buckets.some(b => b.name === 'avatars')) {
+              setError("Storage buckets not found. Please contact support to set up the required storage buckets.");
+              throw new Error("Required storage buckets are missing");
+            }
+          }
+        } catch (storageError) {
+          console.error("Error checking storage:", storageError);
+        }
+        
+        throw functionError;
+      }
     } catch (error) {
       console.error("Error during avatar generation:", error);
       const errorMessage = error.message || "There was an error generating your avatar";
       
-      if (!error) {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
       
       toast({
         title: "Generation failed",
