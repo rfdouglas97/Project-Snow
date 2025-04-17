@@ -105,8 +105,8 @@ serve(async (req) => {
         1. Remove the background completely
         2. Replace with a clean, light neutral gradient background (white or light grey)
         3. Ensure the person remains clear and centered in the frame
-        4. Frame the image as a professional headshot showing head and shoulders
-        5. Maintain natural skin tones and realistic appearance
+        4. Please show the full length figure as shown in the original photo, ideally head to toe if possible. 
+        5. Do not modify the face, eyes, or facial features in any way other than resizing and moving to center the figure. 
         6. Ensure good lighting and clarity
         7. Output as a high-quality image suitable for a profile picture
         8. Do not add any text, watermarks, or additional elements
