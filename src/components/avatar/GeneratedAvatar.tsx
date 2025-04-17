@@ -3,6 +3,9 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Check, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
 
 interface GeneratedAvatarProps {
   isCompleted: boolean;
@@ -15,7 +18,55 @@ export function GeneratedAvatar({
   generatedAvatarUrl, 
   onReset 
 }: GeneratedAvatarProps) {
+  const { toast } = useToast();
+  const [isSaving, setSaving] = useState(false);
+  
   if (!isCompleted) return null;
+  
+  const handleSaveAvatar = async () => {
+    if (!generatedAvatarUrl) {
+      toast({
+        title: "No avatar to save",
+        description: "Please generate an avatar first",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setSaving(true);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to save your avatar",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "Avatar saved",
+        description: "Your avatar is ready to use in the Try-On feature",
+      });
+      
+      // The actual saving happens in the generate-avatar function when it creates
+      // the avatar, so we don't need to do anything additional here
+      
+    } catch (error) {
+      console.error("Error saving avatar:", error);
+      toast({
+        title: "Error saving avatar",
+        description: "Could not save your avatar",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -41,9 +92,13 @@ export function GeneratedAvatar({
           <RefreshCw className="h-4 w-4" />
           Try Again
         </Button>
-        <Button className="flex-1 gap-2">
+        <Button 
+          className="flex-1 gap-2" 
+          onClick={handleSaveAvatar}
+          disabled={isSaving || !generatedAvatarUrl}
+        >
           <Check className="h-4 w-4" />
-          Save Avatar
+          {isSaving ? "Saving..." : "Save Avatar"}
         </Button>
       </div>
     </div>
