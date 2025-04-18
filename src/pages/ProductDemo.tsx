@@ -4,10 +4,10 @@ const ProductDemo = () => {
   const productData = [
     {
       id: "prod-001",
-      name: "Classic Red Button-Up Shirt",
-      imageUrl: "/lovable-uploads/f54cac6c-da73-432d-b5f9-ccb19b60d7c8.png",
-      price: "$49.99",
-      description: "A versatile red button-up shirt crafted from premium fabric. Perfect for both casual and semi-formal occasions."
+      name: "Classic Striped T-Shirt",
+      imageUrl: "/lovable-uploads/b6bfa933-c408-42a4-a596-9b701e86dfa3.png",
+      price: "$34.99",
+      description: "A timeless navy and white striped t-shirt with a relaxed fit. Perfect for casual weekends and layering."
     },
     {
       id: "prod-002",
