@@ -1,4 +1,3 @@
-
 import { ProductTryOn } from "@/components/product-try-on/ProductTryOn";
 
 const ProductDemo = () => {
@@ -13,7 +12,7 @@ const ProductDemo = () => {
     {
       id: "prod-002",
       name: "Black Denim Jacket",
-      imageUrl: "https://images.unsplash.com/photo-1551537482-f2075a1d41f2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+      imageUrl: "https://coach.scene7.com/is/image/Coach/cs198_blk_a0?$mobileProductV3$",
       price: "$89.99",
       description: "A stylish black denim jacket that goes with everything. Features premium stitching and metal buttons."
     }
