@@ -29,6 +29,9 @@ const ProductDemo = () => {
           <p className="mt-5 max-w-xl mx-auto text-xl text-mira-text/80">
             See how these products look on you before you buy
           </p>
+          <p className="mt-2 max-w-xl mx-auto text-sm text-mira-text/60">
+            Using the avatar you've already created in the Avatar Generator
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -62,6 +65,6 @@ const ProductDemo = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ProductDemo;

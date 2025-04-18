@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { TryOnButton } from "./TryOnButton";
 import { TryOnCard } from "./TryOnCard";
@@ -22,7 +22,19 @@ export function ProductTryOn({
   const { toast } = useToast();
   const [showTryOn, setShowTryOn] = useState(false);
   
-  const { userAvatar, fetchUserAvatar } = useAvatarFetching();
+  const { userAvatar, fetchUserAvatar, isLoading: isAvatarLoading } = useAvatarFetching();
+  
+  // Pre-fetch avatar on component mount
+  useEffect(() => {
+    // Only try to fetch avatar once on component mount
+    if (!userAvatar) {
+      fetchUserAvatar().then(success => {
+        if (success) {
+          console.log("Avatar pre-fetched successfully");
+        }
+      });
+    }
+  }, []);
   
   const { 
     isLoading, 
@@ -36,7 +48,7 @@ export function ProductTryOn({
   });
 
   const handleTryOn = async () => {
-    // First check if we already have the user avatar, if not fetch it
+    // If we don't have the avatar yet, try to fetch it
     if (!userAvatar) {
       const hasAvatar = await fetchUserAvatar();
       if (!hasAvatar) return;
@@ -94,6 +106,11 @@ export function ProductTryOn({
     }
   };
 
+  const handleRegenerate = () => {
+    setTryOnImage(null);
+    generateTryOn();
+  };
+
   const handleClose = () => {
     setShowTryOn(false);
     setTryOnImage(null);
@@ -102,7 +119,7 @@ export function ProductTryOn({
   return (
     <div className="relative">
       {!showTryOn ? (
-        <TryOnButton onClick={handleTryOn} />
+        <TryOnButton onClick={handleTryOn} isLoading={isAvatarLoading} />
       ) : (
         <TryOnCard
           productName={productName}
@@ -111,6 +128,7 @@ export function ProductTryOn({
           onClose={handleClose}
           onSave={handleSave}
           onShare={handleShare}
+          onRegenerate={handleRegenerate}
         />
       )}
     </div>
