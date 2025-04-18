@@ -5,7 +5,7 @@ const ProductDemo = () => {
     {
       id: "prod-001",
       name: "Classic White T-Shirt",
-      imageUrl: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3",
+      imageUrl: "https://www.jcrew.com/s7-img-facade/29866_RD6428?hei=2000&crop=0,0,1600,0",
       price: "$24.99",
       description: "A timeless white t-shirt made from 100% organic cotton. Perfect for any casual occasion."
     },
