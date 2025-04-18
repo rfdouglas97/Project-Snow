@@ -4,10 +4,10 @@ const ProductDemo = () => {
   const productData = [
     {
       id: "prod-001",
-      name: "Classic White T-Shirt",
-      imageUrl: "https://www.jcrew.com/s7-img-facade/29866_RD6428?hei=2000&crop=0,0,1600,0",
-      price: "$24.99",
-      description: "A timeless white t-shirt made from 100% organic cotton. Perfect for any casual occasion."
+      name: "Classic Red Button-Up Shirt",
+      imageUrl: "/lovable-uploads/f54cac6c-da73-432d-b5f9-ccb19b60d7c8.png",
+      price: "$49.99",
+      description: "A versatile red button-up shirt crafted from premium fabric. Perfect for both casual and semi-formal occasions."
     },
     {
       id: "prod-002",
