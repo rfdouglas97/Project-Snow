@@ -110,6 +110,7 @@ serve(async (req) => {
         6. Ensure good lighting and clarity
         7. Output as a high-quality image suitable for a profile picture
         8. Do not add any text, watermarks, or additional elements
+        9. If you do, for whatever reason, end up editing the face in spite of my instruction, bias toward making them attractive / handsome / pretty. 
       `;
 
       console.log('Using Gemini 2.0 Flash (Image Generation) for avatar generation with prompt:', prompt);
