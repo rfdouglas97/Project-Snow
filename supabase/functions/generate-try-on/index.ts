@@ -149,12 +149,13 @@ serve(async (req) => {
         Task: Create a realistic virtual try-on image where the person from the first image is wearing the clothing item from the second image.
         
         IMPORTANT REQUIREMENTS:
-        - PRESERVE: The person's face, hair, skin tone, and body proportions MUST remain exactly as they are in the first image
+        - PRESERVE: The person's face, hair, skin tone, and body proportions MUST remain exactly as they are in the first image. Keep the length of the figure exactly as is. 
         - DO NOT: Change facial features, expressions, hairstyle, body shape, or add accessories that aren't in the original images
         - DO NOT: Make the person thinner, taller, or modify any physical attributes
         - ONLY: Make the clothing item from the second image appear to be worn by the person in the first image
         - MAINTAIN: The lighting, background and overall composition of the first image
         - ENSURE: The clothing appears natural and properly fitted to the person's body
+        -Ensure: the clothing you render preserves the detail of the source clothing image uploaded
         
         The final image must look like the exact same person wearing the new clothing item with absolutely no modifications to their physical appearance.
         
