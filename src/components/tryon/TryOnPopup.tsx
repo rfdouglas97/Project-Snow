@@ -6,14 +6,13 @@ interface TryOnPopupProps {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
-  header?: React.ReactNode; // NEW: allow custom header content (like the Mira logo)
+  header?: React.ReactNode; // Still allow for extensibility if needed
 }
 
 export const TryOnPopup: React.FC<TryOnPopupProps> = ({
   open,
   onClose,
   children,
-  header
 }) => {
   if (!open) return null;
   return (
@@ -26,13 +25,16 @@ export const TryOnPopup: React.FC<TryOnPopupProps> = ({
         >
           <X className="h-5 w-5 text-gray-500" />
         </button>
-        {/* Custom header (e.g. just Mira logo) */}
-        {header && (
-          <div className="w-full flex items-center justify-start pl-5 pt-4 pb-2">
-            {header}
-          </div>
-        )}
-        <div className={header ? "pt-0 pb-6 sm:pt-0 sm:pb-0" : "pt-2 pb-6 sm:pt-0 sm:pb-0"}>
+        {/* Always show Mira logo in the header (upper left) */}
+        <div className="w-full flex items-center justify-start pl-5 pt-4 pb-2">
+          <img
+            src="/lovable-uploads/987cf6d3-d5d8-4d02-b4eb-088715115d64.png"
+            alt="Mira logo"
+            className="w-28 h-auto"
+            style={{ borderRadius: 12 }}
+          />
+        </div>
+        <div className="pt-0 pb-6 sm:pt-0 sm:pb-0">
           {children}
         </div>
       </div>

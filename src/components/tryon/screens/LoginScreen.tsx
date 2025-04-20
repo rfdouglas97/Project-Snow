@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 
@@ -15,17 +14,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
         boxShadow: "0 2px 12px 0 rgba(106,28,248,0.12)",
       }}
     >
-      {/* Mira Logo centered at top */}
-      <img
-        src="/lovable-uploads/4a9e6bb2-27ae-42ad-9764-f1381ba11187.png"
-        alt="Mira logo"
-        className="w-28 h-auto mt-4 mb-6 self-start"
-        style={{
-          boxShadow: "0 2px 16px 0 rgba(106,28,248, 0.10)",
-          borderRadius: 12,
-          marginLeft: 8
-        }}
-      />
       <div className="flex-1 flex flex-col items-center justify-center w-full">
         <h2 className="text-2xl sm:text-3xl font-heading font-bold text-white [text-shadow:0_2px_6px_rgba(90,30,180,0.09)] text-center mb-2">
           Try Before you Buy
