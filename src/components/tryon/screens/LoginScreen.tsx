@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
+import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { FaGoogle } from "react-icons/fa";
@@ -57,17 +58,8 @@ export const LoginScreen: React.FC<{
           "linear-gradient(135deg,#b89af7 0%,#6E59A5 100%)",
       }}
     >
+      <MiraLogoOverlay />
       <PopupCloseButton onClick={onClose} />
-      {/* Navbar-style Mira logo */}
-      <img
-        src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png"
-        alt="Mira"
-        className="absolute top-4 left-4 h-20"
-        style={{
-          backgroundColor: "transparent",
-        }}
-        draggable={false}
-      />
       <div className="flex-1 flex flex-col items-center pt-[88px] justify-start">
         <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_8px_rgba(90,30,180,0.09)] text-center mb-2" style={{letterSpacing:0}}>
           Try Before you Buy

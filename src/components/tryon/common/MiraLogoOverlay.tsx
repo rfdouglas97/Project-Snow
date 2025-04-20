@@ -2,7 +2,7 @@
 import React from "react";
 
 /**
- * Consistent Mira Logo overlay for upper left of modals, updated to match Navbar logo
+ * Consistent Mira Logo overlay for upper left of modals, matches Navbar logo exactly
  */
 export const MiraLogoOverlay: React.FC = () => (
   <div className="absolute top-4 left-4 z-20 pointer-events-none select-none">
