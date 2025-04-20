@@ -1,73 +1,131 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 import { PopupCloseButton } from "../common/PopupCloseButton";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
-interface LoginScreenProps {
+/**
+ * Try-on login modal, matching supplied screenshot and UX requirements.
+ */
+export const LoginScreen: React.FC<{
   onNext: () => void;
   onClose: () => void;
-}
+}> = ({ onNext, onClose }) => {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext, onClose }) => {
+  // The same login logic as in AuthButtons
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const currentUrl = new URL(window.location.href);
+      const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Authentication Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Authentication Error",
+        description: "Failed to initiate Google sign-in",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="relative w-[500px] h-[600px] rounded-2xl bg-white overflow-hidden flex items-center justify-center">
-      <MiraLogoOverlay />
+    <div
+      className="relative w-[420px] h-[600px] rounded-2xl bg-[#b89af7] overflow-hidden flex flex-col items-stretch shadow-2xl"
+      style={{
+        background:
+          "linear-gradient(135deg,#b89af7 0%,#6E59A5 100%)",
+      }}
+    >
       <PopupCloseButton onClick={onClose} />
-      <div
-        className="flex flex-col items-center justify-center w-full h-full rounded-2xl"
+      {/* Mira logo in white square like navbar */}
+      <img
+        src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png"
+        alt="Mira"
+        className="absolute top-7 left-7 h-16 w-16 rounded-xl bg-white shadow border object-cover z-20"
         style={{
-          background: "linear-gradient(135deg, #b89af7 0%, #6E59A5 100%)"
+          backgroundColor: "white", // force white bg
         }}
-      >
-        <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_6px_rgba(90,30,180,0.09)] text-center mb-3 mt-10">
+        draggable={false}
+      />
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center pt-[72px] justify-start">
+        <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_8px_rgba(90,30,180,0.09)] text-center mb-2" style={{letterSpacing:0}}>
           Try Before you Buy
         </h2>
-        <p className="mb-8 text-[1.18rem] text-white opacity-90 text-center font-semibold">
+        <p className="mb-8 text-[1.15rem] text-white opacity-90 text-center font-semibold">
           Sign in to use Mira
         </p>
         <Button
-          onClick={onNext}
-          variant="outline"
-          className="w-[310px] h-12 bg-white text-mira-purple font-medium text-base border shadow-md gap-3 justify-center rounded-lg hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-mira-purple transition mb-6"
-          style={{ color: "#6A1CF8" }}
+          onClick={handleGoogleSignIn}
+          type="button"
+          disabled={isLoading}
+          className="w-[320px] h-14 rounded-[18px] text-lg font-semibold bg-white text-[#6A1CF8] border-0 shadow-md flex justify-center items-center transition mb-6 hover:bg-gray-100 active:scale-97"
+          style={{
+            boxShadow: "0px 5px 36px 0 rgba(155,135,245,0.10)",
+          }}
         >
-          <span>Sign in with Google</span>
+          {isLoading ? (
+            <span>Signing in...</span>
+          ) : (
+            <span>Sign in with Google</span>
+          )}
         </Button>
-        <div className="text-white opacity-95 text-center mb-6 text-base">
+        <div className="text-white opacity-95 text-center mb-7 text-base font-medium">
           Or Create an Account - it only takes 2 minutes
         </div>
         <Button
           onClick={onNext}
+          type="button"
           variant="ghost"
-          className="w-[310px] h-12 bg-gradient-to-r from-primary to-mira-pink text-white font-semibold border-0
-            hover:from-mira-pink hover:to-primary active:scale-95 transition rounded-lg relative overflow-hidden"
+          className="w-[320px] h-14 text-lg font-semibold rounded-[18px] border-0 shadow-none relative overflow-hidden flex justify-center items-center transition"
           style={{
-            boxShadow: "0 3px 24px 0 rgba(155,135,245,0.14)",
+            background: "linear-gradient(90deg, #9b87f5 15%, #D63AFF 90%)",
+            color: "#fff",
+            boxShadow: "0 3px 18px 0 rgba(155,135,245,0.12)",
           }}
         >
           <span className="relative z-10">Create Account</span>
+          {/* Subtle animated overlay highlight */}
           <span
-            className="absolute inset-0 rounded-lg pointer-events-none"
+            className="absolute inset-0 rounded-[18px] pointer-events-none"
             style={{
-              boxShadow:
-                "0 0 0 2px rgba(106,28,248,0.12), 0 8px 32px 2px rgba(155,135,245,0.10)",
-              background: "linear-gradient(90deg,#9b87f5 10%, #D63AFF 100%)",
-              opacity: 0.22,
-              zIndex: 1,
+              opacity: 0.13,
             }}
           ></span>
         </Button>
-        <div className="mt-auto text-center w-full pt-8 pb-3">
-          <a
-            href="https://www.trymira.xyz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block text-white font-semibold text-sm rounded px-4 py-1 transition"
-          >
-            www.trymira.xyz
-          </a>
-        </div>
+      </div>
+      <div className="mt-auto mb-2 text-center w-full">
+        <a
+          href="https://www.trymira.xyz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-white font-semibold text-sm rounded px-4 py-1 transition"
+        >
+          www.trymira.xyz
+        </a>
       </div>
     </div>
   );
