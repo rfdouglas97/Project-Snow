@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { AvatarViewScreen } from "./AvatarViewScreen";
 import { AvatarUploadScreen } from "./AvatarUploadScreen";
+import { TryOnPopupScreen } from "./TryOnPopupScreen";
 
 interface IntroScreenProps {
   onNext: () => void;
@@ -15,6 +16,10 @@ interface IntroScreenProps {
 export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
   const { user } = useSupabaseAuth();
   const [isAvatarViewOpen, setIsAvatarViewOpen] = React.useState(false);
+  const [isAvatarUploadOpen, setIsAvatarUploadOpen] = React.useState(false);
+
+  // Local state for try-on popup
+  const [tryOnPopupOpen, setTryOnPopupOpen] = React.useState(false);
 
   // Google returns first name as 'given_name' in user_metadata
   const firstName =
@@ -23,8 +28,8 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
     user?.email?.split("@")[0] ||
     "User";
 
-  // Avatar upload modal state
-  const [isAvatarUploadOpen, setIsAvatarUploadOpen] = React.useState(false);
+  // Handle Try On button click to open the try-on modal
+  const handleTryOn = () => setTryOnPopupOpen(true);
 
   return (
     <div className="relative flex flex-col min-h-[700px] w-full items-center justify-start px-4 sm:px-8 pt-6 pb-10 bg-white rounded-2xl shadow-md mx-auto">
@@ -54,7 +59,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
 
         {/* Try On Button with gradient */}
         <Button
-          onClick={onNext}
+          onClick={handleTryOn}
           className="w-[310px] h-12 font-semibold text-base bg-gradient-to-r from-mira-purple to-mira-pink text-white flex gap-2 items-center justify-center shadow-md mb-5 mt-2 hover:opacity-90 transition-all"
           style={{
             borderRadius: "0.7rem",
@@ -67,7 +72,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
 
         {/* Product name/subtitle */}
         <div className="mb-6 mt-2 text-lg text-mira-text font-semibold text-center">
-          Click to try on "<span className="font-bold">Striped Shirt</span>"
+          Click to try on "&quot;<span className="font-bold">Striped Shirt</span>&quot;"
         </div>
 
         {/* Secondary action buttons */}
@@ -90,6 +95,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           </Button>
         </div>
       </div>
+
       {/* Pop-up Avatar View Screen */}
       <AvatarViewScreen
         open={isAvatarViewOpen}
@@ -100,6 +106,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           setIsAvatarUploadOpen(true);
         }}
       />
+
       {/* Pop-up Avatar Upload Screen */}
       {isAvatarUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -113,6 +120,12 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           />
         </div>
       )}
+
+      {/* Try-On Popup Modal */}
+      <TryOnPopupScreen 
+        open={tryOnPopupOpen} 
+        onClose={() => setTryOnPopupOpen(false)}
+      />
     </div>
   );
 };

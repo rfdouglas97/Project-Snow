@@ -30,9 +30,9 @@ export const AvatarResultScreen: React.FC<AvatarResultScreenProps> = ({
         Create Your Avatar
       </h2>
       <p className="mb-6 text-center text-sm text-gray-600 px-4 max-w-[350px]">
-        Upload a photo and we'll generate a standardized avatar with GPT-4o
+        Upload a photo and we&apos;ll generate a standardized avatar with GPT-4o
       </p>
-      <div className="w-60 h-72 rounded-lg border border-gray-300 overflow-hidden mb-4 shadow-sm bg-white">
+      <div className="w-60 h-72 rounded-lg border border-gray-300 overflow-hidden mb-4 shadow-sm bg-white flex items-center justify-center">
         {avatarUrl ? (
           <img
             src={avatarUrl}
@@ -49,7 +49,7 @@ export const AvatarResultScreen: React.FC<AvatarResultScreenProps> = ({
         Your full-body avatar has been generated with neutral-colored clothing
         and background
       </p>
-      <div className="flex gap-3 w-full max-w-[320px] px-4 mb-6">
+      <div className="flex gap-3 w-full max-w-[320px] px-4 mb-4">
         <Button
           variant="outline"
           onClick={onTryAgain}
@@ -64,7 +64,7 @@ export const AvatarResultScreen: React.FC<AvatarResultScreenProps> = ({
         </Button>
       </div>
       <Button
-        className="w-full max-w-[320px] bg-mira-purple text-white font-semibold py-2"
+        className="w-full max-w-[320px] bg-mira-purple text-white font-semibold py-2 mt-2"
         onClick={onReturnToIntro}
       >
         Return to Try On Screen
@@ -72,4 +72,3 @@ export const AvatarResultScreen: React.FC<AvatarResultScreenProps> = ({
     </div>
   );
 };
-
