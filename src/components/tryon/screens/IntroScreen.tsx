@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 
 interface IntroScreenProps {
   onNext: () => void;
@@ -10,6 +11,15 @@ interface IntroScreenProps {
 }
 
 export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
+  const { user } = useSupabaseAuth();
+
+  // Google returns first name as 'given_name' in user_metadata
+  const firstName =
+    user?.user_metadata?.given_name ||
+    user?.user_metadata?.first_name ||
+    user?.email?.split("@")[0] ||
+    "User";
+
   return (
     <div className="relative flex flex-col min-h-[700px] w-full items-center justify-start px-4 sm:px-8 pt-6 pb-10 bg-white rounded-2xl shadow-md mx-auto">
       {/* Mira Logo */}
@@ -22,7 +32,9 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
       </div>
 
       <div className="flex flex-col items-center w-full">
-        <h2 className="text-2xl font-bold text-mira-text text-center mb-1 mt-4">Welcome Leslie</h2>
+        <h2 className="text-2xl font-bold text-mira-text text-center mb-1 mt-4">
+          Welcome {firstName}
+        </h2>
         
         {/* Product Image */}
         <div className="w-full flex justify-center mt-5 mb-4">
