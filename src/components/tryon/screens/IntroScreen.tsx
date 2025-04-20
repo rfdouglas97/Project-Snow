@@ -1,8 +1,10 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { AvatarViewScreen } from "./AvatarViewScreen";
+import { AvatarUploadScreen } from "./AvatarUploadScreen";
 
 interface IntroScreenProps {
   onNext: () => void;
@@ -20,6 +22,9 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
     user?.user_metadata?.first_name ||
     user?.email?.split("@")[0] ||
     "User";
+
+  // Avatar upload modal state
+  const [isAvatarUploadOpen, setIsAvatarUploadOpen] = React.useState(false);
 
   return (
     <div className="relative flex flex-col min-h-[700px] w-full items-center justify-start px-4 sm:px-8 pt-6 pb-10 bg-white rounded-2xl shadow-md mx-auto">
@@ -79,9 +84,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
             variant="outline"
             className="w-full border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10"
             type="button"
-            onClick={() => {
-              alert("Change My Avatar (coming soon)");
-            }}
+            onClick={() => setIsAvatarUploadOpen(true)}
           >
             Change my Avatar
           </Button>
@@ -91,11 +94,25 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
       <AvatarViewScreen
         open={isAvatarViewOpen}
         onClose={() => setIsAvatarViewOpen(false)}
-        onEditAvatar={() => {
+        onBackToIntro={() => setIsAvatarViewOpen(false)}
+        onGoToAvatarUpload={() => {
           setIsAvatarViewOpen(false);
-          alert("Edit Avatar (coming soon)");
+          setIsAvatarUploadOpen(true);
         }}
       />
+      {/* Pop-up Avatar Upload Screen */}
+      {isAvatarUploadOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <AvatarUploadScreen
+            onNext={() => setIsAvatarUploadOpen(false)}
+            onBack={() => {
+              setIsAvatarUploadOpen(false);
+              setIsAvatarViewOpen(true);
+            }}
+            onClose={() => setIsAvatarUploadOpen(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

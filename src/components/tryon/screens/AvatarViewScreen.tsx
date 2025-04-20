@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { X, Edit, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,18 +10,21 @@ interface AvatarViewScreenProps {
   open: boolean;
   onClose: () => void;
   onEditAvatar?: () => void;
+  onBackToIntro: () => void;
+  onGoToAvatarUpload: () => void;
 }
 
 export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
   open,
   onClose,
-  onEditAvatar,
+  onBackToIntro,
+  onGoToAvatarUpload,
 }) => {
   const { user } = useSupabaseAuth();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchAvatar = async () => {
       if (!user) {
         setAvatarUrl(null);
@@ -29,7 +32,6 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
       }
       setIsLoading(true);
 
-      // Try to fetch the latest avatar from the "avatars" bucket
       const { data: avatarData, error } = await supabase.storage
         .from("avatars")
         .list(`user-${user.id}`, {
@@ -74,7 +76,9 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
           />
         </div>
         {/* Title */}
-        <h2 className="text-base font-semibold text-mira-text text-center mb-2">{"Your Avatar"}</h2>
+        <h2 className="text-base font-semibold text-mira-text text-center mb-2">
+          {"Your Avatar"}
+        </h2>
         {/* Avatar Image */}
         <div className="mb-2 flex justify-center w-full">
           {isLoading ? (
@@ -97,7 +101,7 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
           <Button
             className="w-full bg-gradient-to-r from-mira-purple to-mira-pink font-semibold text-white py-2 text-base shadow hover:opacity-90 transition-all"
             style={{ borderRadius: "0.6rem" }}
-            onClick={onEditAvatar}
+            onClick={onGoToAvatarUpload}
           >
             <Edit className="w-5 h-5 mr-2" /> Edit my Avatar
           </Button>
@@ -105,7 +109,7 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
             type="button"
             className="w-full border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10"
             variant="outline"
-            onClick={onClose}
+            onClick={onBackToIntro}
           >
             <ArrowLeft className="w-5 h-5 mr-2" /> Return / Back
           </Button>
