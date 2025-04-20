@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Google } from "lucide-react";
+// Removed import of Google icon because it does not exist in lucide-react
 
 interface LoginScreenProps {
   onNext: () => void;
@@ -45,7 +45,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
           variant="outline"
           className="w-[310px] h-12 bg-white text-mira-purple font-medium text-base border shadow-md gap-3 justify-center rounded-lg hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-mira-purple transition mb-4"
         >
-          <Google className="w-5 h-5 text-mira-purple" />
+          {/* Removed Google icon since it does not exist */}
           <span>Sign in with Google</span>
         </Button>
         <div className="text-white opacity-85 text-center mb-5 text-base">
@@ -92,3 +92,4 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
     </div>
   );
 };
+
