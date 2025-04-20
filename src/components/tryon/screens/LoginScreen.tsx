@@ -4,10 +4,8 @@ import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { FaGoogle } from "react-icons/fa";
 
-/**
- * Try-on login modal, matching supplied screenshot and UX requirements.
- */
 export const LoginScreen: React.FC<{
   onNext: () => void;
   onClose: () => void;
@@ -15,7 +13,7 @@ export const LoginScreen: React.FC<{
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // The same login logic as in AuthButtons
+  // Google auth logic reused from homepage
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
@@ -60,39 +58,38 @@ export const LoginScreen: React.FC<{
       }}
     >
       <PopupCloseButton onClick={onClose} />
-      {/* Mira logo in white square like navbar */}
+      {/* Navbar-style Mira logo */}
       <img
         src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png"
         alt="Mira"
-        className="absolute top-7 left-7 h-16 w-16 rounded-xl bg-white shadow border object-cover z-20"
+        className="absolute top-4 left-4 h-20"
         style={{
-          backgroundColor: "white", // force white bg
+          backgroundColor: "transparent",
         }}
         draggable={false}
       />
-      {/* Content */}
-      <div className="flex-1 flex flex-col items-center pt-[72px] justify-start">
+      <div className="flex-1 flex flex-col items-center pt-[88px] justify-start">
         <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_8px_rgba(90,30,180,0.09)] text-center mb-2" style={{letterSpacing:0}}>
           Try Before you Buy
         </h2>
         <p className="mb-8 text-[1.15rem] text-white opacity-90 text-center font-semibold">
           Sign in to use Mira
         </p>
-        <Button
+        {/* Styled Google sign-in button */}
+        <button
           onClick={handleGoogleSignIn}
-          type="button"
           disabled={isLoading}
-          className="w-[320px] h-14 rounded-[18px] text-lg font-semibold bg-white text-[#6A1CF8] border-0 shadow-md flex justify-center items-center transition mb-6 hover:bg-gray-100 active:scale-97"
-          style={{
-            boxShadow: "0px 5px 36px 0 rgba(155,135,245,0.10)",
-          }}
+          type="button"
+          className="w-[320px] h-14 mb-6 flex items-center justify-center rounded-2xl bg-[#f7f4ee] border border-[#e7e3db] hover:bg-[#f1ece4] transition shadow-sm text-black text-lg font-semibold gap-3 outline-none focus-visible:ring-2 focus-visible:ring-mira-purple select-none"
+          style={{ boxShadow: "0px 2px 12px 0 rgba(155,135,245,0.06)" }}
         >
+          <FaGoogle className="text-black text-2xl" style={{ flexShrink: 0 }} />
           {isLoading ? (
-            <span>Signing in...</span>
+            <span className="ml-2 font-medium">Signing in...</span>
           ) : (
-            <span>Sign in with Google</span>
+            <span className="ml-2 font-medium">Sign in with Google</span>
           )}
-        </Button>
+        </button>
         <div className="text-white opacity-95 text-center mb-7 text-base font-medium">
           Or Create an Account - it only takes 2 minutes
         </div>
@@ -108,7 +105,6 @@ export const LoginScreen: React.FC<{
           }}
         >
           <span className="relative z-10">Create Account</span>
-          {/* Subtle animated overlay highlight */}
           <span
             className="absolute inset-0 rounded-[18px] pointer-events-none"
             style={{
