@@ -1,5 +1,19 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
+
+/**
+ * Logo used on login and all screens.
+ */
+const MiraLogo = () => (
+  <div className="absolute top-4 left-4 z-10">
+    <img
+      src="/lovable-uploads/d13df097-d549-409d-9f72-69a9c48a60d4.png"
+      alt="Mira logo"
+      className="w-20 h-auto rounded-xl shadow-none bg-transparent"
+    />
+  </div>
+);
 
 interface LoginScreenProps {
   onNext: () => void;
@@ -9,13 +23,17 @@ interface LoginScreenProps {
 export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
   return (
     <div
-      className="flex flex-col min-h-[580px] sm:min-h-[700px] w-full items-center justify-center px-2 sm:px-8 py-6 bg-gradient-to-br from-[#b89af7] to-[#6E59A5] rounded-2xl"
-      style={{
-        boxShadow: "0 2px 12px 0 rgba(106,28,248,0.12)",
-      }}
+      className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden rounded-2xl"
     >
-      <div className="flex-1 flex flex-col items-center justify-center w-full">
-        <h2 className="text-2xl sm:text-3xl font-heading font-bold text-white [text-shadow:0_2px_6px_rgba(90,30,180,0.09)] text-center mb-2">
+      {/* LOGO in top-left, inside gradient section */}
+      <MiraLogo />
+      <div
+        className="flex flex-col items-center justify-center w-full h-full rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, #b89af7 0%, #6E59A5 100%)"
+        }}
+      >
+        <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_6px_rgba(90,30,180,0.09)] text-center mb-3 mt-10">
           Try Before you Buy
         </h2>
         <p className="mb-8 text-[1.18rem] text-white opacity-90 text-center font-semibold">
@@ -29,6 +47,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
           }}
           variant="outline"
           className="w-[310px] h-12 bg-white text-mira-purple font-medium text-base border shadow-md gap-3 justify-center rounded-lg hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-mira-purple transition mb-6"
+          style={{ color: "#6A1CF8" }}
         >
           <span>Sign in with Google</span>
         </Button>
@@ -59,17 +78,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
             }}
           ></span>
         </Button>
-      </div>
-      {/* Footer link */}
-      <div className="mt-auto text-center w-full pt-8 pb-3">
-        <a
-          href="https://www.trymira.xyz"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block text-white font-semibold text-sm rounded px-4 py-1 transition"
-        >
-          www.trymira.xyz
-        </a>
+        {/* Footer link in gradient section, bottom but not out of view */}
+        <div className="mt-auto text-center w-full pt-8 pb-3">
+          <a
+            href="https://www.trymira.xyz"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-white font-semibold text-sm rounded px-4 py-1 transition"
+          >
+            www.trymira.xyz
+          </a>
+        </div>
       </div>
     </div>
   );
