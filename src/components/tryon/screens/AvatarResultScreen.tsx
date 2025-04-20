@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Check } from "lucide-react";
 import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 import { PopupCloseButton } from "../common/PopupCloseButton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AvatarResultScreenProps {
   onNext: () => void;
@@ -38,11 +39,10 @@ export const AvatarResultScreen: React.FC<AvatarResultScreenProps> = ({
             src={avatarUrl}
             alt="Generated Avatar"
             className="object-contain w-full h-full"
+            loading="eager"
           />
         ) : (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-            [Avatar Image]
-          </div>
+          <Skeleton className="w-full h-full" />
         )}
       </div>
       <p className="text-center text-xs text-gray-500 mb-6 max-w-[320px] px-2">
@@ -58,13 +58,20 @@ export const AvatarResultScreen: React.FC<AvatarResultScreenProps> = ({
           <RefreshCw className="h-4 w-4" />
           Try Again
         </Button>
-        <Button disabled className="flex-1 gap-2">
+        <Button className="flex-1 gap-2 bg-mira-purple hover:bg-mira-pink">
           <Check className="h-4 w-4" />
           Avatar Saved
         </Button>
       </div>
       <Button
         className="w-full max-w-[320px] bg-mira-purple text-white font-semibold py-2 mt-2"
+        onClick={onNext}
+      >
+        Continue to Try On
+      </Button>
+      <Button
+        variant="outline"
+        className="w-full max-w-[320px] border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10 py-2 mt-3"
         onClick={onReturnToIntro}
       >
         Return to Try On Screen

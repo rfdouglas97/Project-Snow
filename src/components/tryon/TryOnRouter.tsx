@@ -88,6 +88,14 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     setStep("intro");
   };
 
+  // Handle avatar upload completion and navigation to result screen
+  const handleAvatarUploadComplete = (generatedAvatarUrl?: string) => {
+    if (generatedAvatarUrl) {
+      setAvatarUrl(generatedAvatarUrl);
+    }
+    nextStep();
+  };
+
   switch (step) {
     case "login":
       return <LoginScreen onNext={nextStep} onClose={onClose} />;
@@ -96,7 +104,7 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     case "onboarding":
       return <OnboardingScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
     case "avatar-upload":
-      return <AvatarUploadScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
+      return <AvatarUploadScreen onNext={handleAvatarUploadComplete} onBack={prevStep} onClose={onClose} />;
     case "avatar-result":
       return (
         <AvatarResultScreen

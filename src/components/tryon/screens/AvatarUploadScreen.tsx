@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 import { PopupCloseButton } from "../common/PopupCloseButton";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 interface AvatarUploadScreenProps {
-  onNext: (file?: File) => void;
+  onNext: (avatarUrl?: string) => void;
   onBack: () => void;
   onClose: () => void;
 }
@@ -15,10 +18,116 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
   onNext, onBack, onClose
 }) => {
   const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
     setFile(selectedFile);
+  };
+
+  const handleCreateAvatar = async () => {
+    if (!file) {
+      toast({
+        title: "No file selected",
+        description: "Please select an image to upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
+      
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upload an avatar",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      }
+
+      const userFolder = `user-${user.id}`;
+      
+      // Upload image to user_uploads bucket
+      const fileName = `${userFolder}/${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('user_uploads')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+
+      toast({
+        title: "Upload successful",
+        description: "Your photo has been uploaded. Now generating your standardized avatar...",
+      });
+
+      // Get public URL of uploaded image
+      const { data: { publicUrl } } = supabase.storage
+        .from('user_uploads')
+        .getPublicUrl(fileName);
+      
+      console.log("File uploaded to:", publicUrl);
+      
+      // Generate avatar using edge function
+      setIsGenerating(true);
+      const { data, error: functionError } = await supabase.functions.invoke('generate-avatar', {
+        body: { 
+          imageUrl: publicUrl,
+          userId: user.id 
+        }
+      });
+
+      if (functionError) {
+        console.error("Function invocation error:", functionError);
+        throw new Error(`Edge function error: ${functionError.message}`);
+      }
+
+      if (data?.error) {
+        console.error("Generation error:", data.error);
+        throw new Error(`Image generation error: ${data.error}`);
+      }
+
+      console.log("Generated avatar response:", data);
+      toast({
+        title: "Avatar generated",
+        description: "Your standardized avatar has been created.",
+      });
+
+      // Pass the avatar URL to the next screen
+      onNext(data.avatarUrl);
+      
+    } catch (error) {
+      console.error("Error during avatar generation:", error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "There was an unexpected error generating your avatar";
+      
+      toast({
+        title: "Generation failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -43,17 +152,21 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
             type="file"
             accept="image/*"
             className="mb-2 w-full text-xs border border-gray-200 rounded px-2 py-1 file:bg-mira-purple file:text-white file:rounded file:px-3 file:py-2"
-            disabled={false}
+            disabled={isUploading || isGenerating}
             onChange={handleFileChange}
           />
         </div>
         <Button
-          onClick={() => onNext(file ?? undefined)}
+          onClick={handleCreateAvatar}
           className="w-full flex items-center justify-center gap-2 bg-mira-purple hover:bg-mira-pink text-white transition font-semibold py-2"
-          disabled={!file}
+          disabled={!file || isUploading || isGenerating}
         >
-          <Upload className="h-4 w-4" />
-          Create Standardized Avatar
+          {(isUploading || isGenerating) ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          {isUploading ? "Uploading..." : isGenerating ? "Generating..." : "Create Standardized Avatar"}
         </Button>
       </div>
       <div className="w-full max-w-[320px] mt-4 mb-3 text-gray-700 text-sm">
@@ -79,13 +192,14 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
           className="py-2 px-4 rounded bg-gray-100 border text-gray-700 flex-1 shadow hover:bg-gray-200"
           variant="outline"
           onClick={onBack}
+          disabled={isUploading || isGenerating}
         >
           Back
         </Button>
         <Button
           className="py-2 px-4 rounded bg-mira-purple text-white font-semibold flex-1 shadow hover:bg-mira-pink transition"
-          onClick={() => onNext(file ?? undefined)}
-          disabled={!file}
+          onClick={handleCreateAvatar}
+          disabled={!file || isUploading || isGenerating}
         >
           Continue
         </Button>
