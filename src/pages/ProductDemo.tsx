@@ -1,6 +1,13 @@
+
+import { useState } from "react";
 import { ProductTryOn } from "@/components/product-try-on/ProductTryOn";
+import { Button } from "@/components/ui/button";
+import { TryOnPopup } from "@/components/tryon/TryOnPopup";
+import { TryOnRouter } from "@/components/tryon/TryOnRouter";
 
 const ProductDemo = () => {
+  const [showMiraPopup, setShowMiraPopup] = useState(false);
+
   const productData = [
     {
       id: "prod-001",
@@ -50,12 +57,35 @@ const ProductDemo = () => {
                 </div>
                 <p className="mt-2 text-mira-text/80">{product.description}</p>
                 <div className="mt-4">
-                  <ProductTryOn
-                    productId={product.id}
-                    productName={product.name}
-                    productImageUrl={product.imageUrl}
-                    price={product.price}
-                  />
+                  {product.id === "prod-001" ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        className="w-full flex items-center justify-center gap-2 font-semibold border-2"
+                        style={{
+                          borderColor: "#F97316", // Gold-ish
+                          color: "#F97316"
+                        }}
+                        onClick={() => setShowMiraPopup(true)}
+                      >
+                        Try on with Mira (Pop-up)
+                      </Button>
+                      {/* Modal: Try-On Full Flow */}
+                      <TryOnPopup open={showMiraPopup} onClose={() => setShowMiraPopup(false)}>
+                        <TryOnRouter 
+                          onClose={() => setShowMiraPopup(false)}
+                          defaultStep="intro"
+                        />
+                      </TryOnPopup>
+                    </>
+                  ) : (
+                    <ProductTryOn
+                      productId={product.id}
+                      productName={product.name}
+                      productImageUrl={product.imageUrl}
+                      price={product.price}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -67,3 +97,4 @@ const ProductDemo = () => {
 }
 
 export default ProductDemo;
+
