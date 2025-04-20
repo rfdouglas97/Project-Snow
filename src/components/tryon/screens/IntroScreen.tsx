@@ -30,24 +30,26 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
   const handleTryOn = () => setTryOnPopupOpen(true);
 
   return (
-    <div className="relative w-[500px] h-[600px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-md overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-between bg-white">
       <MiraLogoOverlay />
       <PopupCloseButton onClick={onClose} />
-      <div className="flex flex-col items-center w-full pt-6">
-        <h2 className="text-2xl font-bold text-mira-text text-center mb-1 mt-4">
+      
+      <div className="flex flex-col items-center w-full pt-6 pb-6">
+        <h2 className="text-2xl font-bold text-mira-text text-center mb-1">
           Welcome {firstName}
         </h2>
-        <div className="w-full flex justify-center mt-5 mb-4">
+        
+        <div className="w-full flex justify-center mt-2 mb-2">
           <img
             src="https://80abf56c-759b-449a-9d84-dc9ecb2b2969.lovableproject.com/lovable-uploads/b6bfa933-c408-42a4-a596-9b701e86dfa3.png"
             alt="Striped Shirt"
-            className="rounded-lg shadow-lg border object-contain aspect-[3/4] max-h-72 max-w-xs bg-white"
-            style={{ background: "#fff" }}
+            className="rounded-lg shadow-sm border object-contain h-56 max-w-[240px] bg-white"
           />
         </div>
+        
         <Button
           onClick={handleTryOn}
-          className="w-[310px] h-12 font-semibold text-base bg-gradient-to-r from-mira-purple to-mira-pink text-white flex gap-2 items-center justify-center shadow-md mb-5 mt-2 hover:opacity-90 transition-all"
+          className="w-[310px] h-11 font-semibold text-base bg-gradient-to-r from-mira-purple to-mira-pink text-white flex gap-2 items-center justify-center shadow-md mb-3 mt-2 hover:opacity-90 transition-all"
           style={{
             borderRadius: "0.7rem",
             boxShadow: "0 2px 16px 0 rgba(106,28,248,0.10)",
@@ -56,9 +58,11 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
           <ArrowRight className="w-5 h-5 text-white" />
           Try on with Mira
         </Button>
-        <div className="mb-6 mt-2 text-lg text-mira-text font-semibold text-center">
+        
+        <div className="mb-4 text-lg text-mira-text font-semibold text-center">
           Click to try on "&quot;<span className="font-bold">Striped Shirt</span>&quot;"
         </div>
+        
         <div className="flex flex-col gap-2 w-[310px]">
           <Button
             variant="outline"
@@ -78,6 +82,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
           </Button>
         </div>
       </div>
+      
       <AvatarViewScreen
         open={isAvatarViewOpen}
         onClose={() => setIsAvatarViewOpen(false)}
