@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LoginScreen } from "./screens/LoginScreen";
 import { IntroScreen } from "./screens/IntroScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
@@ -18,22 +18,40 @@ type Step =
 interface TryOnRouterProps {
   onClose: () => void;
   defaultStep?: Step;
+  onStepChange?: (step: Step) => void; // Notifies popup wrapper of step for header logo logic
 }
 
-export const TryOnRouter: React.FC<TryOnRouterProps> = ({ onClose, defaultStep = "login" }) => {
+export const TryOnRouter: React.FC<TryOnRouterProps> = ({
+  onClose,
+  defaultStep = "login",
+  onStepChange,
+}) => {
   const [step, setStep] = useState<Step>(defaultStep);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (onStepChange) {
+      onStepChange(step);
+    }
+  }, [step, onStepChange]);
 
   const nextStep = () => {
     setStep((prev) => {
       switch (prev) {
-        case "login": return "intro";
-        case "intro": return "onboarding";
-        case "onboarding": return "avatar-upload";
-        case "avatar-upload": return "avatar-result";
-        case "avatar-result": return "tryon";
-        case "tryon": return "tryon";
-        default: return prev;
+        case "login":
+          return "intro";
+        case "intro":
+          return "onboarding";
+        case "onboarding":
+          return "avatar-upload";
+        case "avatar-upload":
+          return "avatar-result";
+        case "avatar-result":
+          return "tryon";
+        case "tryon":
+          return "tryon";
+        default:
+          return prev;
       }
     });
   };
@@ -41,12 +59,18 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({ onClose, defaultStep =
   const prevStep = () => {
     setStep((prev) => {
       switch (prev) {
-        case "intro": return "login";
-        case "onboarding": return "intro";
-        case "avatar-upload": return "onboarding";
-        case "avatar-result": return "avatar-upload";
-        case "tryon": return "avatar-result";
-        default: return prev;
+        case "intro":
+          return "login";
+        case "onboarding":
+          return "intro";
+        case "avatar-upload":
+          return "onboarding";
+        case "avatar-result":
+          return "avatar-upload";
+        case "tryon":
+          return "avatar-result";
+        default:
+          return prev;
       }
     });
   };
@@ -74,14 +98,16 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({ onClose, defaultStep =
     case "avatar-upload":
       return <AvatarUploadScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
     case "avatar-result":
-      return <AvatarResultScreen 
-        onNext={nextStep} 
-        onBack={prevStep} 
-        onClose={onClose} 
-        avatarUrl={avatarUrl}
-        onTryAgain={handleTryAgain}
-        onReturnToIntro={handleReturnToIntro}
-      />;
+      return (
+        <AvatarResultScreen
+          onNext={nextStep}
+          onBack={prevStep}
+          onClose={onClose}
+          avatarUrl={avatarUrl}
+          onTryAgain={handleTryAgain}
+          onReturnToIntro={handleReturnToIntro}
+        />
+      );
     case "tryon":
       return <TryOnScreen onBack={prevStep} onClose={onClose} />;
     default:

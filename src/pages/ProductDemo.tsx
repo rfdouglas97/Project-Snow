@@ -25,6 +25,9 @@ const ProductDemo = () => {
     }
   ];
 
+  // For the popup: show logo in header except when in "login" step
+  const [popupStep, setPopupStep] = useState<null | string>(null);
+
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
@@ -63,18 +66,36 @@ const ProductDemo = () => {
                         variant="outline"
                         className="w-full flex items-center justify-center gap-2 font-semibold border-2"
                         style={{
-                          borderColor: "#F97316", // Gold-ish
+                          borderColor: "#F9C846", // Gold outline (hex)
                           color: "#F97316"
                         }}
-                        onClick={() => setShowMiraPopup(true)}
+                        onClick={() => {
+                          setShowMiraPopup(true);
+                          setPopupStep("login");
+                        }}
                       >
                         Try on with Mira (Pop-up)
                       </Button>
                       {/* Modal: Try-On Full Flow */}
-                      <TryOnPopup open={showMiraPopup} onClose={() => setShowMiraPopup(false)}>
-                        <TryOnRouter 
+                      <TryOnPopup
+                        open={showMiraPopup}
+                        onClose={() => setShowMiraPopup(false)}
+                        header={
+                          // Show logo in all steps except login
+                          popupStep !== "login" && (
+                            <img
+                              src="/lovable-uploads/4a9e6bb2-27ae-42ad-9764-f1381ba11187.png"
+                              alt="Mira logo"
+                              className="w-28 h-auto"
+                            />
+                          )
+                        }
+                      >
+                        <TryOnRouter
                           onClose={() => setShowMiraPopup(false)}
-                          defaultStep="intro"
+                          defaultStep="login"
+                          // Propagate popupStep by updating on step change
+                          onStepChange={(step: string) => setPopupStep(step)}
                         />
                       </TryOnPopup>
                     </>
@@ -97,4 +118,3 @@ const ProductDemo = () => {
 }
 
 export default ProductDemo;
-
