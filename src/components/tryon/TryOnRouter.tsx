@@ -22,6 +22,7 @@ interface TryOnRouterProps {
 
 export const TryOnRouter: React.FC<TryOnRouterProps> = ({ onClose, defaultStep = "login" }) => {
   const [step, setStep] = useState<Step>(defaultStep);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const nextStep = () => {
     setStep((prev) => {
@@ -53,6 +54,16 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({ onClose, defaultStep =
   // Easily allow custom step navigation if needed
   const goToStep = (to: Step) => setStep(to);
 
+  // For the Try Again function required by AvatarResultScreen
+  const handleTryAgain = () => {
+    setStep("avatar-upload");
+  };
+
+  // For returning to the intro screen from avatar result
+  const handleReturnToIntro = () => {
+    setStep("intro");
+  };
+
   switch (step) {
     case "login":
       return <LoginScreen onNext={nextStep} onClose={onClose} />;
@@ -63,7 +74,14 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({ onClose, defaultStep =
     case "avatar-upload":
       return <AvatarUploadScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
     case "avatar-result":
-      return <AvatarResultScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
+      return <AvatarResultScreen 
+        onNext={nextStep} 
+        onBack={prevStep} 
+        onClose={onClose} 
+        avatarUrl={avatarUrl}
+        onTryAgain={handleTryAgain}
+        onReturnToIntro={handleReturnToIntro}
+      />;
     case "tryon":
       return <TryOnScreen onBack={prevStep} onClose={onClose} />;
     default:
