@@ -1,32 +1,19 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-
-/**
- * Logo used on login and all screens.
- */
-const MiraLogo = () => (
-  <div className="absolute top-4 left-4 z-10">
-    <img
-      src="/lovable-uploads/d13df097-d549-409d-9f72-69a9c48a60d4.png"
-      alt="Mira logo"
-      className="w-20 h-auto rounded-xl shadow-none bg-transparent"
-    />
-  </div>
-);
+import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
+import { PopupCloseButton } from "../common/PopupCloseButton";
 
 interface LoginScreenProps {
   onNext: () => void;
   onClose: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext, onClose }) => {
   return (
-    <div
-      className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden rounded-2xl"
-    >
-      {/* LOGO in top-left, inside gradient section */}
-      <MiraLogo />
+    <div className="relative w-[500px] h-[600px] rounded-2xl bg-white overflow-hidden flex items-center justify-center">
+      <MiraLogoOverlay />
+      <PopupCloseButton onClick={onClose} />
       <div
         className="flex flex-col items-center justify-center w-full h-full rounded-2xl"
         style={{
@@ -39,12 +26,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
         <p className="mb-8 text-[1.18rem] text-white opacity-90 text-center font-semibold">
           Sign in to use Mira
         </p>
-        {/* Google Auth Button */}
         <Button
-          onClick={() => {
-            // TODO: Replace with actual Supabase Google Auth
-            onNext();
-          }}
+          onClick={onNext}
           variant="outline"
           className="w-[310px] h-12 bg-white text-mira-purple font-medium text-base border shadow-md gap-3 justify-center rounded-lg hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-mira-purple transition mb-6"
           style={{ color: "#6A1CF8" }}
@@ -55,10 +38,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
           Or Create an Account - it only takes 2 minutes
         </div>
         <Button
-          onClick={() => {
-            // TODO: Open signup flow or modal
-            onNext();
-          }}
+          onClick={onNext}
           variant="ghost"
           className="w-[310px] h-12 bg-gradient-to-r from-primary to-mira-pink text-white font-semibold border-0
             hover:from-mira-pink hover:to-primary active:scale-95 transition rounded-lg relative overflow-hidden"
@@ -78,7 +58,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNext }) => {
             }}
           ></span>
         </Button>
-        {/* Footer link in gradient section, bottom but not out of view */}
         <div className="mt-auto text-center w-full pt-8 pb-3">
           <a
             href="https://www.trymira.xyz"

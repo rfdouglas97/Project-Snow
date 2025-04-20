@@ -1,5 +1,7 @@
 
 import React, { useState } from "react";
+import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
+import { PopupCloseButton } from "../common/PopupCloseButton";
 
 interface OnboardingScreenProps {
   onNext: (data?: { height?: string; gender?: string }) => void;
@@ -7,15 +9,21 @@ interface OnboardingScreenProps {
   onClose: () => void;
 }
 
-export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onNext, onBack }) => {
+export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
+  onNext,
+  onBack,
+  onClose,
+}) => {
   const [height, setHeight] = useState<string>("");
   const [gender, setGender] = useState<string>("");
 
-  // TODO: Validate/collect more info as needed
-
   return (
-    <div className="flex flex-col min-h-[700px] px-8 pt-10 items-center justify-center">
-      <h2 className="text-2xl font-bold mb-6 text-mira-purple text-center">Quick Onboarding</h2>
+    <div className="relative w-[500px] h-[600px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-lg overflow-hidden">
+      <MiraLogoOverlay />
+      <PopupCloseButton onClick={onClose} />
+      <h2 className="text-2xl font-bold mb-6 text-mira-purple text-center mt-8">
+        Quick Onboarding
+      </h2>
       <form
         className="w-full max-w-xs mx-auto flex flex-col gap-4"
         onSubmit={e => {

@@ -2,6 +2,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Check } from "lucide-react";
+import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
+import { PopupCloseButton } from "../common/PopupCloseButton";
 
 interface AvatarResultScreenProps {
   onNext: () => void;
@@ -18,15 +20,13 @@ export const AvatarResultScreen: React.FC<AvatarResultScreenProps> = ({
   avatarUrl,
   onTryAgain,
   onReturnToIntro,
+  onClose,
 }) => {
   return (
-    <div className="flex flex-col min-h-[700px] px-8 pt-10 items-center justify-center bg-white rounded-2xl shadow-lg max-w-[400px] mx-auto w-full">
-      <img
-        src="/lovable-uploads/4a9e6bb2-27ae-42ad-9764-f1381ba11187.png"
-        alt="Mira logo"
-        className="w-28 h-auto mb-8"
-      />
-      <h2 className="text-2xl font-bold mb-4 text-mira-purple text-center">
+    <div className="relative w-[500px] h-[600px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-lg max-w-[400px] mx-auto overflow-hidden">
+      <MiraLogoOverlay />
+      <PopupCloseButton onClick={onClose} />
+      <h2 className="text-2xl font-bold mb-4 text-mira-purple text-center mt-10">
         Create Your Avatar
       </h2>
       <p className="mb-6 text-center text-sm text-gray-600 px-4 max-w-[350px]">

@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
+import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
+import { PopupCloseButton } from "../common/PopupCloseButton";
 
 interface AvatarUploadScreenProps {
   onNext: (file?: File) => void;
@@ -10,7 +12,7 @@ interface AvatarUploadScreenProps {
 }
 
 export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
-  onNext, onBack
+  onNext, onBack, onClose
 }) => {
   const [file, setFile] = useState<File | null>(null);
 
@@ -20,15 +22,10 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center pt-6 pb-6 px-4 min-h-[550px] w-[350px] bg-white rounded-2xl shadow-lg relative">
-      {/* Logo */}
-      <img 
-        src="/lovable-uploads/4a9e6bb2-27ae-42ad-9764-f1381ba11187.png"
-        alt="Mira logo"
-        className="w-28 h-auto mb-2"
-      />
-      {/* Card */}
-      <div className="bg-white border rounded-xl p-5 w-full max-w-[320px] shadow flex flex-col items-stretch mb-1">
+    <div className="relative w-[500px] h-[600px] flex flex-col items-center pt-8 pb-6 px-4 bg-white rounded-2xl shadow-lg overflow-hidden">
+      <MiraLogoOverlay />
+      <PopupCloseButton onClick={onClose} />
+      <div className="bg-white border rounded-xl p-5 w-full max-w-[320px] shadow flex flex-col items-stretch mb-1 mt-8">
         <h2 className="text-lg font-bold text-mira-purple mb-1 text-center">Create Your Avatar</h2>
         <p className="mb-2 text-xs text-center text-gray-500">
           Upload a photo and we'll generate a standardized avatar with GPT-4o
@@ -59,7 +56,6 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
           Create Standardized Avatar
         </Button>
       </div>
-      {/* Guidelines */}
       <div className="w-full max-w-[320px] mt-4 mb-3 text-gray-700 text-sm">
         <div className="font-bold mb-1">Guidelines for Creating your Avatar:</div>
         <ul className="list-disc pl-5 space-y-1 text-xs">
@@ -78,7 +74,6 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
       >
         Help me take my Avatar Photo
       </Button>
-      {/* Navigation (back) */}
       <div className="flex gap-2 w-full mt-4 justify-between">
         <Button
           className="py-2 px-4 rounded bg-gray-100 border text-gray-700 flex-1 shadow hover:bg-gray-200"

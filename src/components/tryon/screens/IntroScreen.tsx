@@ -6,6 +6,8 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { AvatarViewScreen } from "./AvatarViewScreen";
 import { AvatarUploadScreen } from "./AvatarUploadScreen";
 import { TryOnPopupScreen } from "./TryOnPopupScreen";
+import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
+import { PopupCloseButton } from "../common/PopupCloseButton";
 
 interface IntroScreenProps {
   onNext: () => void;
@@ -13,41 +15,28 @@ interface IntroScreenProps {
   onClose: () => void;
 }
 
-export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
+export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClose }) => {
   const { user } = useSupabaseAuth();
   const [isAvatarViewOpen, setIsAvatarViewOpen] = React.useState(false);
   const [isAvatarUploadOpen, setIsAvatarUploadOpen] = React.useState(false);
-
-  // Local state for try-on popup
   const [tryOnPopupOpen, setTryOnPopupOpen] = React.useState(false);
 
-  // Google returns first name as 'given_name' in user_metadata
   const firstName =
     user?.user_metadata?.given_name ||
     user?.user_metadata?.first_name ||
     user?.email?.split("@")[0] ||
     "User";
 
-  // Handle Try On button click to open the try-on modal
   const handleTryOn = () => setTryOnPopupOpen(true);
 
   return (
-    <div className="relative flex flex-col min-h-[700px] w-full items-center justify-start px-4 sm:px-8 pt-6 pb-10 bg-white rounded-2xl shadow-md mx-auto">
-      {/* Mira Logo */}
-      <div className="w-full flex justify-start mb-3">
-        <img
-          src="/lovable-uploads/4a9e6bb2-27ae-42ad-9764-f1381ba11187.png"
-          alt="Mira logo"
-          className="w-28 h-auto"
-        />
-      </div>
-
-      <div className="flex flex-col items-center w-full">
+    <div className="relative w-[500px] h-[600px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-md overflow-hidden">
+      <MiraLogoOverlay />
+      <PopupCloseButton onClick={onClose} />
+      <div className="flex flex-col items-center w-full pt-6">
         <h2 className="text-2xl font-bold text-mira-text text-center mb-1 mt-4">
           Welcome {firstName}
         </h2>
-        
-        {/* Product Image */}
         <div className="w-full flex justify-center mt-5 mb-4">
           <img
             src="https://80abf56c-759b-449a-9d84-dc9ecb2b2969.lovableproject.com/lovable-uploads/b6bfa933-c408-42a4-a596-9b701e86dfa3.png"
@@ -56,8 +45,6 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
             style={{ background: "#fff" }}
           />
         </div>
-
-        {/* Try On Button with gradient */}
         <Button
           onClick={handleTryOn}
           className="w-[310px] h-12 font-semibold text-base bg-gradient-to-r from-mira-purple to-mira-pink text-white flex gap-2 items-center justify-center shadow-md mb-5 mt-2 hover:opacity-90 transition-all"
@@ -69,13 +56,9 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           <ArrowRight className="w-5 h-5 text-white" />
           Try on with Mira
         </Button>
-
-        {/* Product name/subtitle */}
         <div className="mb-6 mt-2 text-lg text-mira-text font-semibold text-center">
           Click to try on "&quot;<span className="font-bold">Striped Shirt</span>&quot;"
         </div>
-
-        {/* Secondary action buttons */}
         <div className="flex flex-col gap-2 w-[310px]">
           <Button
             variant="outline"
@@ -95,8 +78,6 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           </Button>
         </div>
       </div>
-
-      {/* Pop-up Avatar View Screen */}
       <AvatarViewScreen
         open={isAvatarViewOpen}
         onClose={() => setIsAvatarViewOpen(false)}
@@ -106,8 +87,6 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           setIsAvatarUploadOpen(true);
         }}
       />
-
-      {/* Pop-up Avatar Upload Screen */}
       {isAvatarUploadOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <AvatarUploadScreen
@@ -120,8 +99,6 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           />
         </div>
       )}
-
-      {/* Try-On Popup Modal */}
       <TryOnPopupScreen 
         open={tryOnPopupOpen} 
         onClose={() => setTryOnPopupOpen(false)}
