@@ -19,28 +19,28 @@ export function FeatureTabs({ user, onSignOut }: FeatureTabsProps) {
   
   return (
     <Tabs defaultValue="auth" className="w-full">
-      <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-4'} rounded-full p-1 bg-white`}>
+      <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 rounded-md p-2 bg-white">
         <TabsTrigger 
           value="auth" 
-          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-md text-xs sm:text-sm py-2.5 px-1 data-[state=active]:bg-mira-purple data-[state=active]:text-white text-center"
         >
           Authentication
         </TabsTrigger>
         <TabsTrigger 
           value="storage" 
-          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-md text-xs sm:text-sm py-2.5 px-1 data-[state=active]:bg-mira-purple data-[state=active]:text-white text-center"
         >
           Try on Products
         </TabsTrigger>
         <TabsTrigger 
           value="avatar" 
-          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-md text-xs sm:text-sm py-2.5 px-1 data-[state=active]:bg-mira-purple data-[state=active]:text-white text-center"
         >
           Avatar Generator
         </TabsTrigger>
         <TabsTrigger 
           value="api" 
-          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-md text-xs sm:text-sm py-2.5 px-1 data-[state=active]:bg-mira-purple data-[state=active]:text-white text-center"
         >
           API Testing
         </TabsTrigger>
