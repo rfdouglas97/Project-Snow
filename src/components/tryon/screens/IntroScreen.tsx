@@ -1,5 +1,7 @@
 
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 interface IntroScreenProps {
   onNext: () => void;
@@ -9,27 +11,74 @@ interface IntroScreenProps {
 
 export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
   return (
-    <div className="flex flex-col min-h-[700px] px-8 pt-10 items-center justify-center">
-      <h2 className="text-2xl font-bold mb-4 text-mira-purple text-center">Welcome to Mira Virtual Try-On</h2>
-      <p className="text-center text-gray-600 mb-8">
-        Try outfits on your real body in seconds—just one photo, and Mira will handle the rest!
-        No app installs needed. Let's see how you look in this item.
-      </p>
-      <div className="flex flex-col gap-3 w-full">
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="py-2 rounded bg-gray-100 border text-gray-700 shadow"
-          >
-            Back
-          </button>
-        )}
-        <button
+    <div className="relative flex flex-col min-h-[700px] w-full items-center justify-start px-4 sm:px-8 pt-6 pb-10 bg-white rounded-2xl shadow-md mx-auto">
+      {/* Mira Logo */}
+      <div className="w-full flex justify-start mb-3">
+        <img
+          src="/lovable-uploads/4a9e6bb2-27ae-42ad-9764-f1381ba11187.png"
+          alt="Mira logo"
+          className="w-28 h-auto"
+        />
+      </div>
+
+      <div className="flex flex-col items-center w-full">
+        <h2 className="text-2xl font-bold text-mira-text text-center mb-1 mt-4">Welcome Leslie</h2>
+        
+        {/* Product Image */}
+        <div className="w-full flex justify-center mt-5 mb-4">
+          <img
+            src="https://80abf56c-759b-449a-9d84-dc9ecb2b2969.lovableproject.com/lovable-uploads/b6bfa933-c408-42a4-a596-9b701e86dfa3.png"
+            alt="Striped Shirt"
+            className="rounded-lg shadow-lg border object-contain aspect-[3/4] max-h-72 max-w-xs bg-white"
+            style={{ background: "#fff" }}
+          />
+        </div>
+
+        {/* Try On Button with gradient */}
+        <Button
           onClick={onNext}
-          className="py-3 mt-2 rounded bg-mira-purple text-white font-semibold shadow hover:bg-mira-pink transition"
+          className="w-[310px] h-12 font-semibold text-base bg-gradient-to-r from-mira-purple to-mira-pink text-white flex gap-2 items-center justify-center shadow-md mb-5 mt-2 hover:opacity-90 transition-all"
+          style={{
+            borderRadius: "0.7rem",
+            boxShadow: "0 2px 16px 0 rgba(106,28,248,0.10)",
+          }}
         >
-          Get Started
-        </button>
+          <ArrowRight className="w-5 h-5 text-white" />
+          Try on with Mira
+        </Button>
+
+        {/* Product name/subtitle */}
+        <div className="mb-6 mt-2 text-lg text-mira-text font-semibold text-center">
+          Click to try on "<span className="font-bold">Striped Shirt</span>"
+        </div>
+
+        {/* Secondary action buttons */}
+        <div className="flex flex-col gap-2 w-[310px]">
+          <Button
+            variant="outline"
+            className="w-full border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10"
+            type="button"
+            // Placeholder onClick - link to avatar view
+            onClick={() => {
+              // TODO: Navigate to Avatar view
+              alert("View My Avatar (coming soon)");
+            }}
+          >
+            View my Avatar
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10"
+            type="button"
+            // Placeholder onClick - link to avatar change screen
+            onClick={() => {
+              // TODO: Navigate to Avatar change
+              alert("Change My Avatar (coming soon)");
+            }}
+          >
+            Change my Avatar
+          </Button>
+        </div>
       </div>
     </div>
   );
