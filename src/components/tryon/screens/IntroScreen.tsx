@@ -1,8 +1,8 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { AvatarViewScreen } from "./AvatarViewScreen";
 
 interface IntroScreenProps {
   onNext: () => void;
@@ -12,6 +12,7 @@ interface IntroScreenProps {
 
 export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
   const { user } = useSupabaseAuth();
+  const [isAvatarViewOpen, setIsAvatarViewOpen] = React.useState(false);
 
   // Google returns first name as 'given_name' in user_metadata
   const firstName =
@@ -70,11 +71,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
             variant="outline"
             className="w-full border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10"
             type="button"
-            // Placeholder onClick - link to avatar view
-            onClick={() => {
-              // TODO: Navigate to Avatar view
-              alert("View My Avatar (coming soon)");
-            }}
+            onClick={() => setIsAvatarViewOpen(true)}
           >
             View my Avatar
           </Button>
@@ -82,9 +79,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
             variant="outline"
             className="w-full border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10"
             type="button"
-            // Placeholder onClick - link to avatar change screen
             onClick={() => {
-              // TODO: Navigate to Avatar change
               alert("Change My Avatar (coming soon)");
             }}
           >
@@ -92,6 +87,15 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack }) => {
           </Button>
         </div>
       </div>
+      {/* Pop-up Avatar View Screen */}
+      <AvatarViewScreen
+        open={isAvatarViewOpen}
+        onClose={() => setIsAvatarViewOpen(false)}
+        onEditAvatar={() => {
+          setIsAvatarViewOpen(false);
+          alert("Edit Avatar (coming soon)");
+        }}
+      />
     </div>
   );
 };
