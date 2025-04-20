@@ -7,6 +7,7 @@ import { AuthButtons } from "@/components/AuthButtons";
 import { ApiDemo } from "@/components/ApiDemo";
 import AvatarGenerator from "@/components/AvatarGenerator";
 import { VirtualTryOn } from "@/components/VirtualTryOn";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface FeatureTabsProps {
   user: User | null;
@@ -14,30 +15,32 @@ interface FeatureTabsProps {
 }
 
 export function FeatureTabs({ user, onSignOut }: FeatureTabsProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <Tabs defaultValue="auth" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 rounded-full p-1 bg-white gap-1">
+      <TabsList className={`grid w-full ${isMobile ? 'grid-cols-2 gap-2' : 'grid-cols-4'} rounded-full p-1 bg-white`}>
         <TabsTrigger 
           value="auth" 
-          className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
         >
           Authentication
         </TabsTrigger>
         <TabsTrigger 
           value="storage" 
-          className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
         >
           Try on Products
         </TabsTrigger>
         <TabsTrigger 
           value="avatar" 
-          className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
         >
           Avatar Generator
         </TabsTrigger>
         <TabsTrigger 
           value="api" 
-          className="rounded-full text-xs sm:text-sm data-[state=active]:bg-mira-purple data-[state=active]:text-white"
+          className="rounded-full text-xs sm:text-sm py-2 data-[state=active]:bg-mira-purple data-[state=active]:text-white"
         >
           API Testing
         </TabsTrigger>
