@@ -144,10 +144,10 @@ export const TryOnPopupScreen: React.FC<TryOnPopupScreenProps> = ({
         >
           <X className="h-5 w-5 text-gray-500" />
         </button>
-        {/* Mira logo */}
+        {/* Navbar Logo (instead of MiraLogoOverlay) */}
         <div className="w-full flex items-center justify-start pl-5 pt-4 pb-3">
           <img
-            src="/lovable-uploads/4a9e6bb2-27ae-42ad-9764-f1381ba11187.png"
+            src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png"
             alt="Mira logo"
             className="w-28 h-auto"
           />
@@ -219,3 +219,4 @@ export const TryOnPopupScreen: React.FC<TryOnPopupScreenProps> = ({
     </div>
   );
 };
+
