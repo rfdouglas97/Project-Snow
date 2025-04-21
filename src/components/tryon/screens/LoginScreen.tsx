@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+{/* Logo implementation */}
+      <div className="absolute top-6 left-6 w-16 h-16 flex items-center justify-center">
+        <img 
+          src="/lovable-uploads/mira-logo.png" 
+          alt="Mira Logo" 
+          className="w-full h-full object-contain"
+        />
+      </div>import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
-import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { FaGoogle } from "react-icons/fa";
@@ -58,9 +64,13 @@ export const LoginScreen: React.FC<{
         borderRadius: "16px",
       }}
     >
-      {/* Fixed MiraLogoOverlay position and size */}
+      {/* Custom logo implementation with direct image */}
       <div className="absolute top-6 left-6 w-16 h-16">
-        <MiraLogoOverlay />
+        <img 
+          src="/public/images/mira-logo.png" 
+          alt="Mira Logo" 
+          className="w-full h-full object-contain"
+        />
       </div>
       
       <PopupCloseButton onClick={onClose} />
