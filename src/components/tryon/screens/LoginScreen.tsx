@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
@@ -52,27 +51,33 @@ export const LoginScreen: React.FC<{
 
   return (
     <div
-      className="relative w-[420px] h-[600px] rounded-2xl bg-[#b89af7] overflow-hidden flex flex-col items-stretch shadow-2xl"
+      className="relative w-full h-full rounded-2xl bg-[#b89af7] overflow-hidden flex flex-col items-stretch shadow-2xl"
       style={{
-        background:
-          "linear-gradient(135deg,#b89af7 0%,#6E59A5 100%)",
+        background: "linear-gradient(135deg, #b89af7 0%, #6E59A5 100%)",
+        minHeight: "600px",
       }}
     >
-      <MiraLogoOverlay />
+      {/* Fixed MiraLogoOverlay position and size */}
+      <div className="absolute top-6 left-6 w-16 h-16">
+        <MiraLogoOverlay />
+      </div>
+      
       <PopupCloseButton onClick={onClose} />
-      <div className="flex-1 flex flex-col items-center pt-[88px] justify-start">
+      
+      <div className="flex-1 flex flex-col items-center pt-24 justify-start px-4">
         <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_8px_rgba(90,30,180,0.09)] text-center mb-2" style={{letterSpacing:0}}>
           Try Before you Buy
         </h2>
         <p className="mb-8 text-[1.15rem] text-white opacity-90 text-center font-semibold">
           Sign in to use Mira
         </p>
+        
         {/* Styled Google sign-in button */}
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
           type="button"
-          className="w-[320px] h-14 mb-6 flex items-center justify-center rounded-2xl bg-[#f7f4ee] border border-[#e7e3db] hover:bg-[#f1ece4] transition shadow-sm text-black text-lg font-semibold gap-3 outline-none focus-visible:ring-2 focus-visible:ring-mira-purple select-none"
+          className="w-full max-w-[320px] h-14 mb-6 flex items-center justify-center rounded-2xl bg-[#f7f4ee] border border-[#e7e3db] hover:bg-[#f1ece4] transition shadow-sm text-black text-lg font-semibold gap-3 outline-none focus-visible:ring-2 focus-visible:ring-mira-purple select-none"
           style={{ boxShadow: "0px 2px 12px 0 rgba(155,135,245,0.06)" }}
         >
           <FaGoogle className="text-black text-2xl" style={{ flexShrink: 0 }} />
@@ -82,14 +87,16 @@ export const LoginScreen: React.FC<{
             <span className="ml-2 font-medium">Sign in with Google</span>
           )}
         </button>
+        
         <div className="text-white opacity-95 text-center mb-7 text-base font-medium">
           Or Create an Account - it only takes 2 minutes
         </div>
+        
         <Button
           onClick={onNext}
           type="button"
           variant="ghost"
-          className="w-[320px] h-14 text-lg font-semibold rounded-[18px] border-0 shadow-none relative overflow-hidden flex justify-center items-center transition"
+          className="w-full max-w-[320px] h-14 text-lg font-semibold rounded-[18px] border-0 shadow-none relative overflow-hidden flex justify-center items-center transition"
           style={{
             background: "linear-gradient(90deg, #9b87f5 15%, #D63AFF 90%)",
             color: "#fff",
@@ -101,11 +108,13 @@ export const LoginScreen: React.FC<{
             className="absolute inset-0 rounded-[18px] pointer-events-none"
             style={{
               opacity: 0.13,
+              background: "linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 100%)"
             }}
           ></span>
         </Button>
       </div>
-      <div className="mt-auto mb-2 text-center w-full">
+      
+      <div className="mt-auto mb-4 text-center w-full">
         <a
           href="https://www.trymira.xyz"
           target="_blank"
