@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { LoginScreen } from "./screens/LoginScreen";
+import { SignUpScreen } from "./screens/SignUpScreen";
 import { IntroScreen } from "./screens/IntroScreen";
 import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { AvatarUploadScreen } from "./screens/AvatarUploadScreen";
@@ -9,6 +9,7 @@ import { TryOnScreen } from "./screens/TryOnScreen";
 
 type Step =
   | "login"
+  | "signup"
   | "intro"
   | "onboarding"
   | "avatar-upload"
@@ -39,6 +40,8 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     setStep((prev) => {
       switch (prev) {
         case "login":
+          return "signup";
+        case "signup":
           return "intro";
         case "intro":
           return "onboarding";
@@ -59,8 +62,10 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
   const prevStep = () => {
     setStep((prev) => {
       switch (prev) {
-        case "intro":
+        case "signup":
           return "login";
+        case "intro":
+          return "signup";
         case "onboarding":
           return "intro";
         case "avatar-upload":
@@ -75,20 +80,16 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     });
   };
 
-  // Easily allow custom step navigation if needed
   const goToStep = (to: Step) => setStep(to);
 
-  // For the Try Again function required by AvatarResultScreen
   const handleTryAgain = () => {
     setStep("avatar-upload");
   };
 
-  // For returning to the intro screen from avatar result
   const handleReturnToIntro = () => {
     setStep("intro");
   };
 
-  // Handle avatar upload completion and navigation to result screen
   const handleAvatarUploadComplete = (generatedAvatarUrl?: string) => {
     if (generatedAvatarUrl) {
       setAvatarUrl(generatedAvatarUrl);
@@ -96,9 +97,19 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     nextStep();
   };
 
+  const handleSignUpClick = () => {
+    setStep("signup");
+  };
+
+  const handleBackToLogin = () => {
+    setStep("login");
+  };
+
   switch (step) {
     case "login":
-      return <LoginScreen onNext={nextStep} onClose={onClose} />;
+      return <LoginScreen onNext={handleSignUpClick} onClose={onClose} />;
+    case "signup":
+      return <SignUpScreen onNext={nextStep} onBack={handleBackToLogin} onClose={onClose} />;
     case "intro":
       return <IntroScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
     case "onboarding":

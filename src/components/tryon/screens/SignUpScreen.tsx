@@ -1,0 +1,93 @@
+
+import React, { useState } from "react";
+import { FaGoogle } from "react-icons/fa";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { PopupCloseButton } from "../common/PopupCloseButton";
+
+export const SignUpScreen: React.FC<{
+  onNext: () => void;
+  onClose: () => void;
+  onBack: () => void;
+}> = ({ onNext, onClose, onBack }) => {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      const currentUrl = new URL(window.location.href);
+      const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      });
+
+      if (error) {
+        toast({
+          title: "Authentication Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Authentication Error",
+        description: "Failed to initiate Google sign-in",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="relative w-full h-full overflow-hidden flex flex-col items-stretch shadow-2xl"
+      style={{
+        background: "linear-gradient(135deg, #b89af7 0%, #6E59A5 100%)",
+        minHeight: "600px",
+        borderRadius: "16px",
+      }}
+    >
+      <div className="absolute top-6 left-6 w-24 h-auto">
+        <img
+          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png"
+          alt="Mira Logo"
+          className="w-full h-full object-contain"
+        />
+      </div>
+
+      <PopupCloseButton onClick={onClose} />
+
+      <div className="flex-1 flex flex-col items-center justify-center px-4 pt-16">
+        <h2 className="text-3xl font-heading font-bold text-white mb-12">
+          Create an Account
+        </h2>
+
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={isLoading}
+          className="w-full max-w-[280px] h-12 flex items-center justify-center bg-white rounded-full shadow-md hover:shadow-lg transition-shadow duration-200 text-gray-700 text-base font-medium"
+        >
+          <FaGoogle className="mr-3 text-xl" />
+          {isLoading ? "Signing up..." : "Sign up with Google"}
+        </button>
+
+        <button
+          onClick={onBack}
+          className="mt-6 text-white/90 hover:text-white transition-colors text-sm font-medium"
+        >
+          Back to Sign In
+        </button>
+      </div>
+    </div>
+  );
+};
