@@ -10,7 +10,7 @@ export const Navbar = () => {
             <img 
               src="/lovable-uploads/aa9a914e-077a-4c57-b8f4-a66c0d337df2.png" 
               alt="Mira" 
-              className="h-20"
+              className="h-40" // Doubled from h-20 to h-40
             />
           </Link>
         </div>
