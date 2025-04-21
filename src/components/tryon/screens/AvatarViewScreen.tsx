@@ -1,11 +1,9 @@
-
 import React from "react";
 import { X, Edit, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 
 interface AvatarViewScreenProps {
   open: boolean;
@@ -31,8 +29,8 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
         setAvatarUrl(null);
         return;
       }
-      setIsLoading(true);
 
+      setIsLoading(true);
       const { data: avatarData, error } = await supabase.storage
         .from("avatars")
         .list(`user-${user.id}`, {
@@ -68,12 +66,21 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
         >
           <X className="h-5 w-5 text-gray-600" />
         </button>
-        {/* Mira Logo Overlay */}
-        <MiraLogoOverlay />
+
+        {/* Custom Logo */}
+        <div className="flex items-center justify-center mb-2 mt-3">
+          <img 
+            src="/lovable-uploads/mira-logo.png" 
+            alt="Mira Logo"
+            className="w-8 h-8 object-contain"
+          />
+        </div>
+
         {/* Title */}
         <h2 className="text-base font-semibold text-mira-text text-center mb-2">
           {"Your Avatar"}
         </h2>
+
         {/* Avatar Image */}
         <div className="mb-2 flex justify-center w-full">
           {isLoading ? (
@@ -91,6 +98,7 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
             </div>
           )}
         </div>
+
         {/* Buttons */}
         <div className="flex flex-col pt-2 gap-2 w-[85%]">
           <Button
@@ -114,4 +122,3 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
     </div>
   );
 };
-
