@@ -67,15 +67,6 @@ export const AvatarViewScreen: React.FC<AvatarViewScreenProps> = ({
           <X className="h-5 w-5 text-gray-600" />
         </button>
 
-        {/* Custom Logo */}
-        <div className="flex items-center justify-center mb-2 mt-3">
-          <img 
-            src="/lovable-uploads/mira-logo.png" 
-            alt="Mira Logo"
-            className="w-8 h-8 object-contain"
-          />
-        </div>
-
         {/* Title */}
         <h2 className="text-base font-semibold text-mira-text text-center mb-2">
           {"Your Avatar"}
