@@ -1,8 +1,6 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 import { PopupCloseButton } from "../common/PopupCloseButton";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -132,10 +130,22 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
 
   return (
     <div className="relative w-[500px] h-[600px] flex flex-col items-center pt-8 pb-6 px-4 bg-white rounded-2xl shadow-lg overflow-hidden">
-      <MiraLogoOverlay />
+      {/* Custom logo implementation */}
+      <div className="absolute top-4 left-4 flex items-center">
+        <img 
+          src="/lovable-uploads/mira-logo.png" 
+          alt="Mira Logo"
+          width={48}
+          height={48}
+          className="object-contain"
+        />
+        <div className="ml-2 text-[#8a3ffc] font-bold text-xl">
+          Create Your Avatar
+        </div>
+      </div>
+      
       <PopupCloseButton onClick={onClose} />
-      <div className="bg-white border rounded-xl p-5 w-full max-w-[320px] shadow flex flex-col items-stretch mb-1 mt-8">
-        <h2 className="text-lg font-bold text-mira-purple mb-1 text-center">Create Your Avatar</h2>
+      <div className="bg-white border rounded-xl p-5 w-full max-w-[320px] shadow flex flex-col items-stretch mb-1 mt-16">
         <p className="mb-2 text-xs text-center text-gray-500">
           Upload a photo and we'll generate a standardized avatar with GPT-4o
         </p>
