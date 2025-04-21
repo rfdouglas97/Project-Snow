@@ -36,7 +36,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
       
       <div className="flex flex-col items-center w-full pt-6 pb-6">
         <h2 className="text-2xl font-bold text-mira-text text-center mb-1">
-          Welcome {firstName}
+          Welcome {firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : ''}
         </h2>
         
         <div className="w-full flex justify-center mt-2 mb-2">
