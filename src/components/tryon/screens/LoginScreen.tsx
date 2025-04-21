@@ -51,10 +51,11 @@ export const LoginScreen: React.FC<{
 
   return (
     <div
-      className="relative w-full h-full rounded-2xl bg-[#b89af7] overflow-hidden flex flex-col items-stretch shadow-2xl"
+      className="relative w-full h-full bg-[#b89af7] overflow-hidden flex flex-col items-stretch shadow-2xl"
       style={{
         background: "linear-gradient(135deg, #b89af7 0%, #6E59A5 100%)",
         minHeight: "600px",
+        borderRadius: "16px",
       }}
     >
       {/* Fixed MiraLogoOverlay position and size */}
