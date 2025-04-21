@@ -1,11 +1,4 @@
-{/* Logo implementation */}
-      <div className="absolute top-6 left-6 w-16 h-16 flex items-center justify-center">
-        <img 
-          src="/lovable-uploads/mira-logo.png" 
-          alt="Mira Logo" 
-          className="w-full h-full object-contain"
-        />
-      </div>import React, { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +12,6 @@ export const LoginScreen: React.FC<{
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Google auth logic reused from homepage
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
@@ -65,11 +57,12 @@ export const LoginScreen: React.FC<{
       }}
     >
       {/* Custom logo implementation with direct image */}
-      <div className="absolute top-6 left-6 w-16 h-16">
+      <div className="absolute top-6 left-6 w-24 h-auto">
         <img 
-          src="/public/images/mira-logo.png" 
+          src="/lovable-uploads/d9437feb-3308-414d-9577-521b1647c47f.png" 
           alt="Mira Logo" 
           className="w-full h-full object-contain"
+          style={{ maxWidth: '100%', maxHeight: '100%' }}
         />
       </div>
       
