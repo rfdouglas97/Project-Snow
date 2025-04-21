@@ -8,7 +8,7 @@ export const Navbar = () => {
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/b2f99f37-05c4-4fef-99be-532dc5f5d3fb.png" 
+              src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png" 
               alt="Mira" 
               className="h-20"
             />

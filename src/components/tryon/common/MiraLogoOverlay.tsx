@@ -7,7 +7,7 @@ import React from "react";
 export const MiraLogoOverlay: React.FC = () => (
   <div className="absolute top-4 left-4 z-20 pointer-events-none select-none">
     <img
-      src="/lovable-uploads/b2f99f37-05c4-4fef-99be-532dc5f5d3fb.png"
+      src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png"
       alt="Mira"
       className="h-20 w-auto"
       draggable={false}
