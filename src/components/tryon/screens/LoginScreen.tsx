@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
@@ -16,6 +15,10 @@ export const LoginScreen: React.FC<{
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Store information about the current popup flow
+      localStorage.setItem('mira_popup_flow', 'active');
+      localStorage.setItem('mira_popup_next_step', 'intro');
+      
       const currentUrl = new URL(window.location.href);
       const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}`;
 
@@ -47,7 +50,7 @@ export const LoginScreen: React.FC<{
       setIsLoading(false);
     }
   };
-
+  
   return (
     <div
       className="relative w-full h-full bg-[#b89af7] overflow-hidden flex flex-col items-stretch shadow-2xl"
