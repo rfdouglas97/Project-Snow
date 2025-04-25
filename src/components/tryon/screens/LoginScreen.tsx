@@ -108,10 +108,12 @@ export const LoginScreen: React.FC<{
         loop
         muted
         playsInline
-        className="absolute inset-0 w-[500px] h-[600px] object-cover z-0"
+        className="absolute inset-0 w-full h-full object-cover z-0"
         style={{ transform: 'scale(1.1)' }}
+        preload="auto"
       >
         <source src="/lovable-uploads/Canva Output.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
       </video>
 
       <div className="absolute inset-0 bg-black/30 z-10" />
