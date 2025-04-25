@@ -34,7 +34,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
       <MiraLogoOverlay />
       <PopupCloseButton onClick={onClose} />
       
-      <div className="flex flex-col items-center w-full pt-6 pb-6">
+      <div className="flex flex-col items-center w-full pt-20 pb-6">
         <h2 className="text-2xl font-bold text-mira-text text-center mb-1">
           Welcome {firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : ''}
         </h2>
