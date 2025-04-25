@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
@@ -13,17 +12,14 @@ export const LoginScreen: React.FC<{
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Add effect to listen for auth completion messages
   useEffect(() => {
     const handleAuthMessage = (event: MessageEvent) => {
-      // Make sure the message is from our domain for security
       if (event.origin !== window.location.origin) return;
       
       if (event.data?.type === "SUPABASE_AUTH_COMPLETE") {
         setIsLoading(false);
         if (event.data?.success) {
           console.log("Auth success received in LoginScreen", event.data);
-          // Successfully signed in, proceed to next step (intro screen)
           onNext();
         } else if (event.data?.error) {
           toast({
@@ -48,11 +44,9 @@ export const LoginScreen: React.FC<{
       const currentUrl = new URL(window.location.href);
       const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}/auth/callback`;
 
-      // Set a flag in localStorage that we're in a popup flow
       localStorage.setItem('mira_popup_flow', 'active');
       localStorage.setItem('mira_popup_next_step', 'intro');
 
-      // Configure auth with popup method instead of redirect
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -61,7 +55,7 @@ export const LoginScreen: React.FC<{
             access_type: "offline",
             prompt: "consent",
           },
-          skipBrowserRedirect: true, // This prevents automatic redirect
+          skipBrowserRedirect: true,
         },
       });
 
@@ -73,7 +67,6 @@ export const LoginScreen: React.FC<{
         throw new Error("No authentication URL returned");
       }
 
-      // Open the authentication URL in a popup window
       const authWindow = window.open(
         data.url,
         "oauth",
@@ -90,7 +83,6 @@ export const LoginScreen: React.FC<{
         return;
       }
 
-      // Poll to check if the popup was closed before completion
       const checkClosed = setInterval(() => {
         if (authWindow.closed) {
           clearInterval(checkClosed);
@@ -110,23 +102,20 @@ export const LoginScreen: React.FC<{
   
   return (
     <div className="relative w-full h-full overflow-hidden flex flex-col items-stretch shadow-2xl rounded-lg">
-      {/* Video Background */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className="absolute inset-0 w-[500px] h-[600px] object-cover z-0"
+        style={{ transform: 'scale(1.1)' }}
       >
         <source src="/lovable-uploads/Canva Output.mp4" type="video/mp4" />
       </video>
 
-      {/* Overlay for better text visibility */}
       <div className="absolute inset-0 bg-black/30 z-10" />
 
-      {/* Content */}
       <div className="relative z-20 flex-1 flex flex-col items-center pt-24 justify-start px-4">
-        {/* Custom logo implementation with direct image */}
         <div className="absolute top-6 left-6 w-24 h-auto">
           <img 
             src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
@@ -145,7 +134,6 @@ export const LoginScreen: React.FC<{
           Sign in to use Mira
         </p>
         
-        {/* Styled Google sign-in button */}
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
