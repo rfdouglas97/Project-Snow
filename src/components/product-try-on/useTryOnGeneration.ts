@@ -34,11 +34,19 @@ export function useTryOnGeneration({ userAvatar, productImageUrl, productName }:
         throw new Error("User not authenticated");
       }
 
+      // Check if productImageUrl is a relative path and convert to absolute URL if needed
+      let fullProductImageUrl = productImageUrl;
+      if (productImageUrl.startsWith('/')) {
+        // Convert relative URL to absolute
+        fullProductImageUrl = `${window.location.origin}${productImageUrl}`;
+        console.log("Converting relative URL to absolute:", fullProductImageUrl);
+      }
+
       // Call the edge function to generate the try-on image
       const { data, error } = await supabase.functions.invoke('generate-try-on', {
         body: { 
           avatarUrl: userAvatar,
-          productImageUrl: productImageUrl,
+          productImageUrl: fullProductImageUrl,
           userId: user.id
         }
       });
