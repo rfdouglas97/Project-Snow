@@ -22,6 +22,7 @@ export const SignUpScreen: React.FC<{
       if (event.data?.type === "SUPABASE_AUTH_COMPLETE") {
         setIsLoading(false);
         if (event.data?.success) {
+          console.log("Auth success received in SignUpScreen");
           // Successfully signed up, proceed to next step
           onNext();
         } else if (event.data?.error) {
@@ -46,6 +47,10 @@ export const SignUpScreen: React.FC<{
     try {
       const currentUrl = new URL(window.location.href);
       const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}/auth/callback`;
+
+      // Set a flag in localStorage that we're in a popup flow
+      localStorage.setItem('mira_popup_flow', 'active');
+      localStorage.setItem('mira_popup_next_step', 'intro');
 
       // Configure auth with popup method instead of redirect
       const { data, error } = await supabase.auth.signInWithOAuth({

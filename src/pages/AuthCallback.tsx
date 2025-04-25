@@ -7,8 +7,8 @@ const AuthCallback = () => {
     // This function processes the authentication callback
     const handleAuthCallback = async () => {
       try {
-        // Get the URL hash and process it
-        const { error } = await supabase.auth.getSession();
+        // Get the session and user data
+        const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Auth callback error:", error.message);
@@ -18,12 +18,19 @@ const AuthCallback = () => {
             error: error.message
           }, window.location.origin);
         } else {
-          console.log("Authentication successful");
-          // Send message to opener window about successful authentication
+          console.log("Authentication successful", data.session);
+          // Send message to opener window with additional user data
           window.opener?.postMessage({
             type: "SUPABASE_AUTH_COMPLETE",
-            success: true
+            success: true,
+            session: data.session
           }, window.location.origin);
+          
+          // Store flag for popup flow in localStorage
+          // This helps with handling redirect flows in some authentication scenarios
+          if (localStorage.getItem('mira_popup_flow') === 'active') {
+            localStorage.setItem('mira_popup_next_step', 'intro');
+          }
         }
         
         // Close this popup window after sending the message

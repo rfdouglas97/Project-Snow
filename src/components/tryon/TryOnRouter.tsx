@@ -42,11 +42,13 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
+        console.log("Auth state change detected: SIGNED_IN", session);
         // Check if this sign-in was part of a popup flow
         const wasInPopupFlow = localStorage.getItem('mira_popup_flow') === 'active';
         const nextStep = localStorage.getItem('mira_popup_next_step');
         
         if (wasInPopupFlow) {
+          console.log("Detected popup flow, moving to next step:", nextStep);
           // Clear the flags
           localStorage.removeItem('mira_popup_flow');
           localStorage.removeItem('mira_popup_next_step');
@@ -62,6 +64,7 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     const nextStep = localStorage.getItem('mira_popup_next_step');
     
     if (wasInPopupFlow && nextStep) {
+      console.log("Initial check detected popup flow, moving to:", nextStep);
       localStorage.removeItem('mira_popup_flow');
       localStorage.removeItem('mira_popup_next_step');
       setStep(nextStep as Step);
@@ -130,7 +133,7 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     if (generatedAvatarUrl) {
       setAvatarUrl(generatedAvatarUrl);
     }
-    nextStep();
+    setStep("avatar-result");
   };
 
   const handleSignUpClick = () => {
@@ -141,22 +144,32 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     setStep("login");
   };
 
+  const handleLoginSuccess = () => {
+    console.log("Login success triggered, moving to intro screen");
+    setStep("intro");
+  };
+
+  const handleSignupSuccess = () => {
+    console.log("Signup success triggered, moving to intro screen");
+    setStep("intro");
+  };
+
   switch (step) {
     case "login":
-      return <LoginScreen onNext={handleSignUpClick} onClose={onClose} />;
+      return <LoginScreen onNext={handleLoginSuccess} onClose={onClose} />;
     case "signup":
-      return <SignUpScreen onNext={nextStep} onBack={handleBackToLogin} onClose={onClose} />;
+      return <SignUpScreen onNext={handleSignupSuccess} onBack={handleBackToLogin} onClose={onClose} />;
     case "intro":
-      return <IntroScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
+      return <IntroScreen onNext={() => setStep("onboarding")} onBack={() => setStep("login")} onClose={onClose} />;
     case "onboarding":
-      return <OnboardingScreen onNext={nextStep} onBack={prevStep} onClose={onClose} />;
+      return <OnboardingScreen onNext={() => setStep("avatar-upload")} onBack={() => setStep("intro")} onClose={onClose} />;
     case "avatar-upload":
-      return <AvatarUploadScreen onNext={handleAvatarUploadComplete} onBack={prevStep} onClose={onClose} />;
+      return <AvatarUploadScreen onNext={handleAvatarUploadComplete} onBack={() => setStep("onboarding")} onClose={onClose} />;
     case "avatar-result":
       return (
         <AvatarResultScreen
-          onNext={nextStep}
-          onBack={prevStep}
+          onNext={() => setStep("tryon")}
+          onBack={() => setStep("avatar-upload")}
           onClose={onClose}
           avatarUrl={avatarUrl}
           onTryAgain={handleTryAgain}
@@ -164,7 +177,7 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
         />
       );
     case "tryon":
-      return <TryOnScreen onBack={prevStep} onClose={onClose} />;
+      return <TryOnScreen onBack={() => setStep("avatar-result")} onClose={onClose} />;
     default:
       return null;
   }
