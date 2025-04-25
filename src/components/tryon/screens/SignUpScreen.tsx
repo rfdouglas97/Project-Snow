@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaGoogle } from "react-icons/fa";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,13 +13,42 @@ export const SignUpScreen: React.FC<{
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignIn = async () => {
+  // Add effect to listen for auth completion messages
+  useEffect(() => {
+    const handleAuthMessage = (event: MessageEvent) => {
+      // Make sure the message is from our domain for security
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data?.type === "SUPABASE_AUTH_COMPLETE") {
+        setIsLoading(false);
+        if (event.data?.success) {
+          // Successfully signed up, proceed to next step
+          onNext();
+        } else if (event.data?.error) {
+          toast({
+            title: "Authentication Error",
+            description: event.data.error,
+            variant: "destructive",
+          });
+        }
+      }
+    };
+    
+    window.addEventListener("message", handleAuthMessage);
+    
+    return () => {
+      window.removeEventListener("message", handleAuthMessage);
+    };
+  }, [onNext, toast]);
+
+  const handleGoogleSignUp = async () => {
     setIsLoading(true);
     try {
       const currentUrl = new URL(window.location.href);
-      const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}`;
+      const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}/auth/callback`;
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Configure auth with popup method instead of redirect
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
@@ -27,23 +56,49 @@ export const SignUpScreen: React.FC<{
             access_type: "offline",
             prompt: "consent",
           },
+          skipBrowserRedirect: true, // This prevents automatic redirect
         },
       });
 
       if (error) {
+        throw error;
+      }
+
+      if (!data?.url) {
+        throw new Error("No authentication URL returned");
+      }
+
+      // Open the authentication URL in a popup window
+      const authWindow = window.open(
+        data.url,
+        "oauth",
+        "width=500,height=800,left=100,top=100"
+      );
+
+      if (!authWindow) {
         toast({
-          title: "Authentication Error",
-          description: error.message,
+          title: "Popup Blocked",
+          description: "Please allow popups for this site to sign up with Google",
           variant: "destructive",
         });
+        setIsLoading(false);
+        return;
       }
+
+      // Poll to check if the popup was closed before completion
+      const checkClosed = setInterval(() => {
+        if (authWindow.closed) {
+          clearInterval(checkClosed);
+          setIsLoading(false);
+        }
+      }, 500);
+
     } catch (error) {
       toast({
         title: "Authentication Error",
-        description: "Failed to initiate Google sign-in",
+        description: error instanceof Error ? error.message : "Failed to initiate Google sign-up",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -73,7 +128,7 @@ export const SignUpScreen: React.FC<{
         </h2>
 
         <button
-          onClick={handleGoogleSignIn}
+          onClick={handleGoogleSignUp}
           disabled={isLoading}
           className="w-full max-w-[280px] h-12 flex items-center justify-center bg-white rounded-full shadow-md hover:shadow-lg transition-shadow duration-200 text-gray-700 text-base font-medium"
         >

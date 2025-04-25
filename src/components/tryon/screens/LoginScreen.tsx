@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
@@ -23,6 +24,12 @@ export const LoginScreen: React.FC<{
         if (event.data?.success) {
           // Successfully signed in, proceed to next step
           onNext();
+        } else if (event.data?.error) {
+          toast({
+            title: "Authentication Error",
+            description: event.data.error,
+            variant: "destructive",
+          });
         }
       }
     };
@@ -32,7 +39,7 @@ export const LoginScreen: React.FC<{
     return () => {
       window.removeEventListener("message", handleAuthMessage);
     };
-  }, [onNext]);
+  }, [onNext, toast]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
