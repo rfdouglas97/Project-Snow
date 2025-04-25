@@ -34,14 +34,14 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
       <MiraLogoOverlay />
       <PopupCloseButton onClick={onClose} />
       
-      <div className="flex flex-col items-center w-full pt-20 pb-6">
-        <h2 className="text-2xl font-bold text-mira-text text-center mb-1">
+      <div className="flex flex-col items-center w-full pt-16 pb-6">
+        <h2 className="text-2xl font-bold text-mira-text text-center mb-4">
           Welcome {firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : ''}
         </h2>
         
-        <div className="w-full flex justify-center mt-2 mb-2">
+        <div className="w-full flex justify-center mt-2 mb-4">
           <img
-            src="https://80abf56c-759b-449a-9d84-dc9ecb2b2969.lovableproject.com/lovable-uploads/b6bfa933-c408-42a4-a596-9b701e86dfa3.png"
+            src="/lovable-uploads/b6bfa933-c408-42a4-a596-9b701e86dfa3.png"
             alt="Striped Shirt"
             className="rounded-lg shadow-sm border object-contain h-56 max-w-[240px] bg-white"
           />
