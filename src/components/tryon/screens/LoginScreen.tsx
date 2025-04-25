@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,17 +12,36 @@ export const LoginScreen: React.FC<{
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Add effect to listen for auth completion messages
+  useEffect(() => {
+    const handleAuthMessage = (event: MessageEvent) => {
+      // Make sure the message is from our domain for security
+      if (event.origin !== window.location.origin) return;
+      
+      if (event.data?.type === "SUPABASE_AUTH_COMPLETE") {
+        setIsLoading(false);
+        if (event.data?.success) {
+          // Successfully signed in, proceed to next step
+          onNext();
+        }
+      }
+    };
+    
+    window.addEventListener("message", handleAuthMessage);
+    
+    return () => {
+      window.removeEventListener("message", handleAuthMessage);
+    };
+  }, [onNext]);
+
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      // Store information about the current popup flow
-      localStorage.setItem('mira_popup_flow', 'active');
-      localStorage.setItem('mira_popup_next_step', 'intro');
-      
       const currentUrl = new URL(window.location.href);
-      const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}`;
+      const redirectUrl = `${currentUrl.protocol}//${currentUrl.host}/auth/callback`;
 
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Configure auth with popup method instead of redirect
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
@@ -30,23 +49,49 @@ export const LoginScreen: React.FC<{
             access_type: "offline",
             prompt: "consent",
           },
+          skipBrowserRedirect: true, // This prevents automatic redirect
         },
       });
 
       if (error) {
+        throw error;
+      }
+
+      if (!data?.url) {
+        throw new Error("No authentication URL returned");
+      }
+
+      // Open the authentication URL in a popup window
+      const authWindow = window.open(
+        data.url,
+        "oauth",
+        "width=500,height=800,left=100,top=100"
+      );
+
+      if (!authWindow) {
         toast({
-          title: "Authentication Error",
-          description: error.message,
+          title: "Popup Blocked",
+          description: "Please allow popups for this site to sign in with Google",
           variant: "destructive",
         });
+        setIsLoading(false);
+        return;
       }
+
+      // Poll to check if the popup was closed before completion
+      const checkClosed = setInterval(() => {
+        if (authWindow.closed) {
+          clearInterval(checkClosed);
+          setIsLoading(false);
+        }
+      }, 500);
+
     } catch (error) {
       toast({
         title: "Authentication Error",
-        description: "Failed to initiate Google sign-in",
+        description: error instanceof Error ? error.message : "Failed to initiate Google sign-in",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };
