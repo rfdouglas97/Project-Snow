@@ -109,27 +109,35 @@ export const LoginScreen: React.FC<{
   };
   
   return (
-    <div
-      className="relative w-full h-full bg-[#b89af7] overflow-hidden flex flex-col items-stretch shadow-2xl"
-      style={{
-        background: "linear-gradient(135deg, #b89af7 0%, #6E59A5 100%)",
-        minHeight: "600px",
-        borderRadius: "16px",
-      }}
-    >
-      {/* Custom logo implementation with direct image */}
-      <div className="absolute top-6 left-6 w-24 h-auto">
-        <img 
-          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
-          alt="Mira Logo" 
-          className="w-full h-full object-contain"
-          style={{ maxWidth: '100%', maxHeight: '100%' }}
-        />
-      </div>
-      
-      <PopupCloseButton onClick={onClose} />
-      
-      <div className="flex-1 flex flex-col items-center pt-24 justify-start px-4">
+    <div className="relative w-full h-full overflow-hidden flex flex-col items-stretch shadow-2xl rounded-lg">
+      {/* Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      >
+        <source src="/lovable-uploads/Canva Output.mp4" type="video/mp4" />
+      </video>
+
+      {/* Overlay for better text visibility */}
+      <div className="absolute inset-0 bg-black/30 z-10" />
+
+      {/* Content */}
+      <div className="relative z-20 flex-1 flex flex-col items-center pt-24 justify-start px-4">
+        {/* Custom logo implementation with direct image */}
+        <div className="absolute top-6 left-6 w-24 h-auto">
+          <img 
+            src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
+            alt="Mira Logo" 
+            className="w-full h-full object-contain"
+            style={{ maxWidth: '100%', maxHeight: '100%' }}
+          />
+        </div>
+        
+        <PopupCloseButton onClick={onClose} />
+        
         <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_8px_rgba(90,30,180,0.09)] text-center mb-2" style={{letterSpacing:0}}>
           Try Before you Buy
         </h2>
@@ -179,7 +187,7 @@ export const LoginScreen: React.FC<{
         </Button>
       </div>
       
-      <div className="mt-auto mb-4 text-center w-full">
+      <div className="relative z-20 mt-auto mb-4 text-center w-full">
         <a
           href="https://www.trymira.xyz"
           target="_blank"
