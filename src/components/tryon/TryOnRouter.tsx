@@ -6,6 +6,7 @@ import { OnboardingScreen } from "./screens/OnboardingScreen";
 import { AvatarUploadScreen } from "./screens/AvatarUploadScreen";
 import { AvatarResultScreen } from "./screens/AvatarResultScreen";
 import { TryOnScreen } from "./screens/TryOnScreen";
+import { supabase } from "@/integrations/supabase/client";
 
 type Step =
   | "login"
@@ -30,11 +31,46 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
   const [step, setStep] = useState<Step>(defaultStep);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
+  // Notify parent of step changes
   useEffect(() => {
     if (onStepChange) {
       onStepChange(step);
     }
   }, [step, onStepChange]);
+
+  // Add auth state listener for Google redirect
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        // Check if this sign-in was part of a popup flow
+        const wasInPopupFlow = localStorage.getItem('mira_popup_flow') === 'active';
+        const nextStep = localStorage.getItem('mira_popup_next_step');
+        
+        if (wasInPopupFlow) {
+          // Clear the flags
+          localStorage.removeItem('mira_popup_flow');
+          localStorage.removeItem('mira_popup_next_step');
+          
+          // Set to the next step (convert to the correct type)
+          setStep(nextStep as Step || 'intro');
+        }
+      }
+    });
+    
+    // Check localStorage on initial render too
+    const wasInPopupFlow = localStorage.getItem('mira_popup_flow') === 'active';
+    const nextStep = localStorage.getItem('mira_popup_next_step');
+    
+    if (wasInPopupFlow && nextStep) {
+      localStorage.removeItem('mira_popup_flow');
+      localStorage.removeItem('mira_popup_next_step');
+      setStep(nextStep as Step);
+    }
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const nextStep = () => {
     setStep((prev) => {
