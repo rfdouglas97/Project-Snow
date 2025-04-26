@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -31,10 +30,16 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-between bg-white">
-      <MiraLogoOverlay />
+      <div className="absolute top-4 left-4 w-48 h-auto">
+        <img
+          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png"
+          alt="Mira Logo"
+          className="w-full h-full object-contain"
+        />
+      </div>
       <PopupCloseButton onClick={onClose} />
       
-      <div className="flex flex-col items-center w-full pt-16 pb-6">
+      <div className="flex flex-col items-center w-full pt-16 pb-2">
         <h2 className="text-2xl font-bold text-mira-text text-center mb-4">
           Welcome {firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : ''}
         </h2>
@@ -49,7 +54,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
         
         <Button
           onClick={handleTryOn}
-          className="w-[310px] h-11 font-semibold text-base bg-gradient-to-r from-mira-purple to-mira-pink text-white flex gap-2 items-center justify-center shadow-md mb-3 mt-2 hover:opacity-90 transition-all"
+          className="w-[310px] h-11 font-semibold text-base bg-gradient-to-r from-mira-purple to-mira-pink text-white flex gap-2 items-center justify-center shadow-md mb-8 mt-2 hover:opacity-90 transition-all"
           style={{
             borderRadius: "0.7rem",
             boxShadow: "0 2px 16px 0 rgba(106,28,248,0.10)",
@@ -59,11 +64,11 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
           Try on with Mira
         </Button>
         
-        <div className="mb-4 text-lg text-mira-text font-semibold text-center">
+        <div className="mb-8 text-lg text-mira-text font-semibold text-center">
           Click to try on "&quot;<span className="font-bold">Striped Shirt</span>&quot;"
         </div>
         
-        <div className="flex flex-col gap-2 w-[310px]">
+        <div className="flex flex-col gap-2 w-[310px] mb-8">
           <Button
             variant="outline"
             className="w-full border-mira-purple text-mira-purple font-medium hover:bg-mira-purple/10"
@@ -83,6 +88,17 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
         </div>
       </div>
       
+      <div className="mb-4 text-center w-full">
+        <a
+          href="https://www.trymira.xyz"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-mira-text font-semibold text-sm rounded px-4 py-1 transition"
+        >
+          www.getmira.xyz
+        </a>
+      </div>
+
       <AvatarViewScreen
         open={isAvatarViewOpen}
         onClose={() => setIsAvatarViewOpen(false)}

@@ -111,7 +111,7 @@ export const LoginScreen: React.FC<{
       <div className="absolute inset-0 bg-black/30 z-10" />
 
       <div className="relative z-20 flex-1 flex flex-col items-center pt-24 justify-start px-4">
-        <div className="absolute top-6 left-6 w-24 h-auto">
+        <div className="absolute top-4 left-4 w-48 h-auto">
           <img 
             src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
             alt="Mira Logo" 
