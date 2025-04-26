@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -6,7 +5,6 @@ import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { AvatarViewScreen } from "./AvatarViewScreen";
 import { AvatarUploadScreen } from "./AvatarUploadScreen";
 import { TryOnPopupScreen } from "./TryOnPopupScreen";
-import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 import { PopupCloseButton } from "../common/PopupCloseButton";
 
 interface IntroScreenProps {
@@ -21,22 +19,60 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
   const [isAvatarUploadOpen, setIsAvatarUploadOpen] = React.useState(false);
   const [tryOnPopupOpen, setTryOnPopupOpen] = React.useState(false);
 
-  const firstName =
-    user?.user_metadata?.given_name ||
-    user?.user_metadata?.first_name ||
-    user?.email?.split("@")[0] ||
-    "User";
+  // Improved first name extraction logic
+  const firstName = React.useMemo(() => {
+    // For Google Auth, sometimes the name is stored in a different location
+    const fullName = user?.user_metadata?.full_name || 
+                    user?.user_metadata?.name;
+                    
+    if (fullName) {
+      // Extract the first name from the full name
+      return fullName.split(' ')[0];
+    }
+    
+    // Try the existing paths for first name
+    const directFirstName = user?.user_metadata?.given_name || 
+                          user?.user_metadata?.first_name;
+                          
+    if (directFirstName) {
+      return directFirstName;
+    }
+    
+    // Fall back to email username only if necessary
+    if (user?.email) {
+      // Check if the email username contains a recognizable name pattern
+      const emailUsername = user.email.split('@')[0];
+      
+      // If it looks like "firstname.lastname" or similar patterns
+      if (emailUsername.includes('.')) {
+        return emailUsername.split('.')[0];
+      }
+      
+      // If it contains numbers at the end, remove them
+      return emailUsername.replace(/\d+$/, '');
+    }
+    
+    return "User";
+  }, [user]);
 
   const handleTryOn = () => setTryOnPopupOpen(true);
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-between bg-white">
-      <MiraLogoOverlay />
+      {/* Logo in the upper left, consistent with LoginScreen */}
+      <div className="absolute top-4 left-4 z-30 w-40">
+        <img 
+          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
+          alt="Mira Logo" 
+          className="w-full h-auto object-contain"
+        />
+      </div>
+      
       <PopupCloseButton onClick={onClose} />
       
-      <div className="flex flex-col items-center w-full pt-16 pb-6">
+      <div className="flex flex-col items-center w-full pt-20 pb-6">
         <h2 className="text-2xl font-bold text-mira-text text-center mb-4">
-          Welcome {firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1) : ''}
+          Welcome {firstName ? firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase() : ''}
         </h2>
         
         <div className="w-full flex justify-center mt-2 mb-4">
