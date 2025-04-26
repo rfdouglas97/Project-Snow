@@ -17,6 +17,14 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   const [height, setHeight] = useState<string>("");
   const [gender, setGender] = useState<string>("");
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onNext({
+      height: height || undefined,
+      gender: gender || undefined,
+    });
+  };
+
   return (
     <div className="relative w-[500px] h-[600px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-lg overflow-hidden">
       <MiraLogoOverlay />
@@ -26,10 +34,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       </h2>
       <form
         className="w-full max-w-xs mx-auto flex flex-col gap-4"
-        onSubmit={e => {
-          e.preventDefault();
-          onNext({ height, gender });
-        }}
+        onSubmit={handleSubmit}
       >
         <label className="text-sm font-medium text-gray-700">
           Height (cm or inches)

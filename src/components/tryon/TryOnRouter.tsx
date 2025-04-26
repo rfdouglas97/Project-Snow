@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { LoginScreen } from "./screens/LoginScreen";
 import { SignUpScreen } from "./screens/SignUpScreen";
@@ -32,35 +31,28 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
   const [step, setStep] = useState<Step>(defaultStep);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  // Notify parent of step changes
   useEffect(() => {
     if (onStepChange) {
       onStepChange(step);
     }
   }, [step, onStepChange]);
 
-  // Add auth state listener for Google redirect
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
         console.log("Auth state change detected: SIGNED_IN", session);
-        // Check if this sign-in was part of a popup flow
         const wasInPopupFlow = localStorage.getItem('mira_popup_flow') === 'active';
         const nextStep = localStorage.getItem('mira_popup_next_step');
         
         if (wasInPopupFlow) {
           console.log("Detected popup flow, moving to next step:", nextStep);
-          // Clear the flags
           localStorage.removeItem('mira_popup_flow');
           localStorage.removeItem('mira_popup_next_step');
-          
-          // Set to the next step (convert to the correct type)
           setStep(nextStep as Step || 'intro');
         }
       }
     });
     
-    // Check localStorage on initial render too
     const wasInPopupFlow = localStorage.getItem('mira_popup_flow') === 'active';
     const nextStep = localStorage.getItem('mira_popup_next_step');
     
@@ -146,13 +138,13 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
   };
 
   const handleLoginSuccess = () => {
-    console.log("Login success triggered, moving to intro screen");
-    setStep("intro");
+    console.log("Login success triggered, moving to onboarding screen");
+    setStep("onboarding");
   };
 
   const handleSignupSuccess = () => {
-    console.log("Signup success triggered, moving to intro screen");
-    setStep("intro");
+    console.log("Signup success triggered, moving to onboarding screen");
+    setStep("onboarding");
   };
 
   switch (step) {
@@ -163,7 +155,33 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     case "intro":
       return <IntroScreen onNext={() => setStep("onboarding")} onBack={() => setStep("login")} onClose={onClose} />;
     case "onboarding":
-      return <OnboardingScreen onNext={() => setStep("avatar-upload")} onBack={() => setStep("intro")} onClose={onClose} />;
+      return <OnboardingScreen 
+        onNext={async (data) => {
+          if (data) {
+            try {
+              const { error } = await supabase
+                .from('profiles')
+                .upsert({
+                  id: (await supabase.auth.getUser()).data.user?.id,
+                  height: data.height,
+                  gender: data.gender,
+                  updated_at: new Date().toISOString(),
+                });
+              
+              if (error) throw error;
+              
+              setStep("avatar-upload");
+            } catch (error) {
+              console.error('Error saving profile:', error);
+              setStep("avatar-upload");
+            }
+          } else {
+            setStep("avatar-upload");
+          }
+        }} 
+        onBack={() => setStep("intro")} 
+        onClose={onClose} 
+      />;
     case "avatar-upload":
       return <AvatarUploadScreen onNext={handleAvatarUploadComplete} onBack={() => setStep("onboarding")} onClose={onClose} />;
     case "avatar-result":
