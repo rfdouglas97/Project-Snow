@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
@@ -103,18 +102,11 @@ export const LoginScreen: React.FC<{
   
   return (
     <div className="relative w-full h-full overflow-hidden flex flex-col items-stretch shadow-2xl rounded-lg">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
+      <img
+        src="/lovable-uploads/0b2e6419-bd11-4aa6-a1ab-2a4711010279.png"
+        alt="Login Background"
         className="absolute inset-0 w-full h-full object-cover z-0"
-        style={{ transform: 'scale(1.1)' }}
-        preload="auto"
-      >
-        <source src="/lovable-uploads/Canva Output.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      />
 
       <div className="absolute inset-0 bg-black/30 z-10" />
 
