@@ -185,7 +185,7 @@ export const LoginScreen: React.FC<{
           rel="noopener noreferrer"
           className="block text-white font-semibold text-sm rounded px-4 py-1 transition"
         >
-          www.trymira.xyz
+          www.getmira.xyz
         </a>
       </div>
     </div>
