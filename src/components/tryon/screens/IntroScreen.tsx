@@ -59,12 +59,12 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-between bg-white">
-      {/* Logo in the upper left, consistent with LoginScreen */}
-      <div className="absolute top-4 left-4 z-30 w-40">
+      {/* Logo in a white box in the upper left corner, as shown in the screenshot */}
+      <div className="absolute top-4 left-4 z-30 w-[56px] h-[56px] bg-[#f7f5f0] rounded-md flex items-center justify-center shadow-sm">
         <img 
-          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
+          src="/lovable-uploads/mira-logo-symbol.png" 
           alt="Mira Logo" 
-          className="w-full h-auto object-contain"
+          className="w-8 h-8 object-contain"
         />
       </div>
       
