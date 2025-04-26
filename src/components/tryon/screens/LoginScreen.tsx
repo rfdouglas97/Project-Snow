@@ -110,8 +110,8 @@ export const LoginScreen: React.FC<{
       />
       <div className="absolute inset-0 bg-black/30 z-10" />
       
-      {/* Logo Container - Make sure it's positioned correctly in the upper left */}
-      <div className="absolute top-0 left-0 z-30 p-4 w-32">
+      {/* Logo Container - Bigger size with proper positioning */}
+      <div className="absolute top-4 left-4 z-30 w-40">
         <img 
           src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
           alt="Mira Logo" 
@@ -125,7 +125,7 @@ export const LoginScreen: React.FC<{
       {/* Main Content Container - With extra top padding to avoid overlapping the logo */}
       <div className="relative z-20 flex-1 flex flex-col items-center justify-between px-8">
         {/* Upper spacer to prevent content from overlapping with logo */}
-        <div className="h-24" />
+        <div className="h-28" />
         
         {/* Center content container */}
         <div className="flex flex-col items-center justify-center flex-1 w-full">
