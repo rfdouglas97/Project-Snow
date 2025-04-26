@@ -109,23 +109,25 @@ export const LoginScreen: React.FC<{
       />
 
       <div className="absolute inset-0 bg-black/30 z-10" />
+      
+      {/* Logo positioned at the absolute top-left of the popup */}
+      <div className="absolute top-2 left-2 w-48 h-auto z-30">
+        <img 
+          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
+          alt="Mira Logo" 
+          className="w-full h-full object-contain"
+        />
+      </div>
 
-      <div className="relative z-20 flex-1 flex flex-col items-center pt-12 justify-start px-4">
-        <div className="absolute top-1 left-1 w-48 h-auto">
-          <img 
-            src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
-            alt="Mira Logo" 
-            className="w-full h-full object-contain"
-            style={{ maxWidth: '100%', maxHeight: '100%' }}
-          />
-        </div>
-        
-        <PopupCloseButton onClick={onClose} />
-        
-        <h2 className="text-3xl font-heading font-bold text-white [text-shadow:0_2px_8px_rgba(90,30,180,0.09)] text-center mb-2" style={{letterSpacing:0}}>
+      <PopupCloseButton onClick={onClose} />
+      
+      {/* Content Container - Centered with more natural spacing */}
+      <div className="relative z-20 flex-1 flex flex-col items-center justify-center px-8">
+        <h2 className="text-4xl font-heading font-bold text-white [text-shadow:0_2px_8px_rgba(90,30,180,0.09)] text-center mb-4" style={{letterSpacing:0}}>
           Try Before you Buy
         </h2>
-        <p className="mb-8 text-[1.15rem] text-white opacity-90 text-center font-semibold">
+        
+        <p className="mb-12 text-xl text-white opacity-90 text-center font-semibold">
           Sign in to use Mira
         </p>
         
@@ -133,7 +135,7 @@ export const LoginScreen: React.FC<{
           onClick={handleGoogleSignIn}
           disabled={isLoading}
           type="button"
-          className="w-full max-w-[320px] h-14 mb-6 flex items-center justify-center rounded-2xl bg-[#f7f4ee] border border-[#e7e3db] hover:bg-[#f1ece4] transition shadow-sm text-black text-lg font-semibold gap-3 outline-none focus-visible:ring-2 focus-visible:ring-mira-purple select-none"
+          className="w-full max-w-[320px] h-14 mb-12 flex items-center justify-center rounded-2xl bg-[#f7f4ee] border border-[#e7e3db] hover:bg-[#f1ece4] transition shadow-sm text-black text-lg font-semibold gap-3 outline-none focus-visible:ring-2 focus-visible:ring-mira-purple select-none"
           style={{ boxShadow: "0px 2px 12px 0 rgba(155,135,245,0.06)" }}
         >
           <FaGoogle className="text-black text-2xl" style={{ flexShrink: 0 }} />
@@ -144,7 +146,7 @@ export const LoginScreen: React.FC<{
           )}
         </button>
         
-        <div className="text-white opacity-95 text-center mb-7 text-base font-medium">
+        <div className="text-white opacity-95 text-center mb-8 text-lg font-medium">
           Or Create an Account - it only takes 2 minutes
         </div>
         
@@ -170,7 +172,7 @@ export const LoginScreen: React.FC<{
         </Button>
       </div>
       
-      <div className="relative z-20 mt-auto mb-4 text-center w-full">
+      <div className="relative z-20 mb-6 text-center w-full">
         <a
           href="https://www.trymira.xyz"
           target="_blank"
