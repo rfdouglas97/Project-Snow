@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { LoginScreen } from "./screens/LoginScreen";
 import { SignUpScreen } from "./screens/SignUpScreen";
@@ -44,11 +45,21 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
         const wasInPopupFlow = localStorage.getItem('mira_popup_flow') === 'active';
         const nextStep = localStorage.getItem('mira_popup_next_step');
         
+        // Check if this is a signup flow
+        const isSignupFlow = localStorage.getItem('mira_signup_flow') === 'true';
+        
         if (wasInPopupFlow) {
           console.log("Detected popup flow, moving to next step:", nextStep);
           localStorage.removeItem('mira_popup_flow');
           localStorage.removeItem('mira_popup_next_step');
-          setStep(nextStep as Step || 'intro');
+          localStorage.removeItem('mira_signup_flow');
+          
+          // If it's a signup flow, go directly to avatar upload
+          if (isSignupFlow) {
+            setStep('avatar-upload');
+          } else {
+            setStep(nextStep as Step || 'intro');
+          }
         }
       }
     });
@@ -130,6 +141,7 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
   };
 
   const handleSignUpClick = () => {
+    localStorage.setItem('mira_signup_flow', 'true');
     setStep("signup");
   };
 
