@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { LoginScreen } from "./screens/LoginScreen";
 import { SignUpScreen } from "./screens/SignUpScreen";
@@ -156,7 +157,7 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
 
   switch (step) {
     case "login":
-      return <LoginScreen onNext={handleLoginSuccess} onClose={onClose} />;
+      return <LoginScreen onNext={handleLoginSuccess} onClose={onClose} onSignUp={handleSignUpClick} />;
     case "signup":
       return <SignUpScreen onNext={handleSignupSuccess} onBack={handleBackToLogin} onClose={onClose} />;
     case "intro":

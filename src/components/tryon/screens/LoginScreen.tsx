@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PopupCloseButton } from "../common/PopupCloseButton";
@@ -8,7 +9,8 @@ import { FaGoogle } from "react-icons/fa";
 export const LoginScreen: React.FC<{
   onNext: () => void;
   onClose: () => void;
-}> = ({ onNext, onClose }) => {
+  onSignUp: () => void;
+}> = ({ onNext, onClose, onSignUp }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -157,7 +159,7 @@ export const LoginScreen: React.FC<{
           </div>
           
           <Button
-            onClick={onNext}
+            onClick={onSignUp}
             type="button"
             variant="ghost"
             className="w-full max-w-[320px] h-14 text-lg font-semibold rounded-[18px] border-0 shadow-none relative overflow-hidden flex justify-center items-center transition"
