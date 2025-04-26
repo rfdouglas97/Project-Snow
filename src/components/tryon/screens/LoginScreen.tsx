@@ -180,7 +180,7 @@ export const LoginScreen: React.FC<{
         
         <div className="mb-6 text-center w-full">
           <a
-            href="https://www.trymira.xyz"
+            href="https://www.getmira.xyz"
             target="_blank"
             rel="noopener noreferrer"
             className="block text-white font-semibold text-sm rounded px-4 py-1 transition"
