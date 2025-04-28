@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { FaGoogle } from "react-icons/fa";
 import { useToast } from "@/components/ui/use-toast";
@@ -109,11 +110,11 @@ export const SignUpScreen: React.FC<{
         borderRadius: "16px",
       }}
     >
-      <div className="absolute top-6 left-6 w-24 h-auto">
+      <div className="absolute top-4 left-4 z-30 w-[56px] h-[56px] bg-[#f7f5f0] rounded-md flex items-center justify-center shadow-sm">
         <img
-          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png"
+          src="/lovable-uploads/mira-logo-symbol.png"
           alt="Mira Logo"
-          className="w-full h-full object-contain"
+          className="w-8 h-8 object-contain"
         />
       </div>
 
