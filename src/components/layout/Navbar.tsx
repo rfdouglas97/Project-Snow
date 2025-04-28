@@ -8,9 +8,9 @@ export const Navbar = () => {
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/lovable-uploads/aa9a914e-077a-4c57-b8f4-a66c0d337df2.png" 
+              src="/lovable-uploads/6c83f9a0-cf96-4135-9f06-232ae29599d6.png" 
               alt="Mira" 
-              className="h-40" // Doubled from h-20 to h-40
+              className="h-16" 
             />
           </Link>
         </div>
