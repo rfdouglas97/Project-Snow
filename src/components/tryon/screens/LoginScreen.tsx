@@ -115,7 +115,7 @@ export const LoginScreen: React.FC<{
       {/* Logo Container - Bigger size with proper positioning */}
       <div className="absolute top-4 left-4 z-30 w-40">
         <img 
-          src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png" 
+          src="/lovable-uploads/aa9a914e-077a-4c57-b8f4-a66c0d337df2.png" 
           alt="Mira Logo" 
           className="w-full h-auto object-contain"
         />
