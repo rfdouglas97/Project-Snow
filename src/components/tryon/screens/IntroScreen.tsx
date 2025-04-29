@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
@@ -63,7 +62,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
       {/* Logo in a white box in the upper left corner, as shown in the screenshot */}
       <div className="absolute top-4 left-4 z-30 w-[56px] h-[56px] bg-[#f7f5f0] rounded-md flex items-center justify-center shadow-sm">
         <img 
-          src="/lovable-uploads/aa9a914e-077a-4c57-b8f4-a66c0d337df2.png" 
+          src="/lovable-uploads/mira-logo-symbol.png" 
           alt="Mira Logo" 
           className="w-8 h-8 object-contain"
         />
