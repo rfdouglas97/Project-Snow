@@ -6,7 +6,6 @@ import { AvatarViewScreen } from "./AvatarViewScreen";
 import { AvatarUploadScreen } from "./AvatarUploadScreen";
 import { TryOnPopupScreen } from "./TryOnPopupScreen";
 import { PopupCloseButton } from "../common/PopupCloseButton";
-import { MiraLogoOverlay } from "../common/MiraLogoOverlay";
 
 interface IntroScreenProps {
   onNext: () => void;
@@ -20,14 +19,18 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
   const [isAvatarUploadOpen, setIsAvatarUploadOpen] = React.useState(false);
   const [tryOnPopupOpen, setTryOnPopupOpen] = React.useState(false);
 
+  // Improved first name extraction logic
   const firstName = React.useMemo(() => {
+    // For Google Auth, sometimes the name is stored in a different location
     const fullName = user?.user_metadata?.full_name || 
                     user?.user_metadata?.name;
                     
     if (fullName) {
+      // Extract the first name from the full name
       return fullName.split(' ')[0];
     }
     
+    // Try the existing paths for first name
     const directFirstName = user?.user_metadata?.given_name || 
                           user?.user_metadata?.first_name;
                           
@@ -35,13 +38,17 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
       return directFirstName;
     }
     
+    // Fall back to email username only if necessary
     if (user?.email) {
+      // Check if the email username contains a recognizable name pattern
       const emailUsername = user.email.split('@')[0];
       
+      // If it looks like "firstname.lastname" or similar patterns
       if (emailUsername.includes('.')) {
         return emailUsername.split('.')[0];
       }
       
+      // If it contains numbers at the end, remove them
       return emailUsername.replace(/\d+$/, '');
     }
     
@@ -52,7 +59,14 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-between bg-white">
-      <MiraLogoOverlay />
+      {/* Logo in a white box in the upper left corner, as shown in the screenshot */}
+      <div className="absolute top-4 left-4 z-30 w-[56px] h-[56px] bg-[#f7f5f0] rounded-md flex items-center justify-center shadow-sm">
+        <img 
+          src="/lovable-uploads/mira-logo-symbol.png" 
+          alt="Mira Logo" 
+          className="w-8 h-8 object-contain"
+        />
+      </div>
       
       <PopupCloseButton onClick={onClose} />
       
