@@ -60,7 +60,7 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
     return (
         <div className="relative w-full h-full flex flex-col items-center justify-between bg-white">
             {/* Fixed logo - using the correct path and sizing */}
-            <div className="absolute top-2 left-2 z-30 w-40">
+            <div className="absolute top-1 left-1 z-30 w-40">
                 <img
                     src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png"
                     alt="Mira Logo"
