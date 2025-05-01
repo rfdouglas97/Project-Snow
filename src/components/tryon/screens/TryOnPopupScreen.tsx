@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -237,7 +236,13 @@ export const TryOnPopupScreen: React.FC<TryOnPopupScreenProps> = ({
             </Button>
           </CardFooter>
         </Card>
-        <div className="pb-3 pt-2 text-sm text-gray-600 font-medium text-center w-full">Close Window</div>
+        {/* Changed from plain text to clickable button */}
+        <button 
+          onClick={onClose} 
+          className="pb-3 pt-2 text-sm text-gray-600 font-medium hover:text-gray-900 transition-colors cursor-pointer w-full text-center"
+        >
+          Close Window
+        </button>
       </div>
     </div>
   );
