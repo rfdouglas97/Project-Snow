@@ -59,10 +59,10 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
 
     return (
         <div className="relative w-full h-full flex flex-col items-center justify-between bg-white">
-            {/* Updated logo with the correct path */}
+            {/* Fixed logo - using the correct path and sizing */}
             <div className="absolute top-1 left-1 z-30 w-40">
                 <img
-                    src="/lovable-uploads/aa9a914e-077a-4c57-b8f4-a66c0d337df2.png"
+                    src="/lovable-uploads/26499bdc-6454-479a-8425-ccd317141be5.png"
                     alt="Mira Logo"
                     className="w-full h-auto object-contain"
                 />
@@ -94,10 +94,6 @@ export const IntroScreen: React.FC<IntroScreenProps> = ({ onNext, onBack, onClos
                     <ArrowRight className="w-5 h-5 text-white" />
                     Try on with Mira
                 </Button>
-
-                <div className="mb-4 text-lg text-mira-text font-semibold text-center">
-                    Click to try on "&quot;<span className="font-bold">Striped Shirt</span>&quot;"
-                </div>
 
                 <div className="flex flex-col gap-2 w-[310px]">
                     <Button
