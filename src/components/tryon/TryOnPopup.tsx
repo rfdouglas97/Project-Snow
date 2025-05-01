@@ -13,8 +13,18 @@ export const TryOnPopup: React.FC<TryOnPopupProps> = ({
   children,
 }) => {
   if (!open) return null;
+  
+  // Added click handler for backdrop to ensure closing works from multiple places
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={(e) => {
+        // Close only if clicking directly on the backdrop
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       {/* Fixed-size container with no scrolling */}
       <div className="relative bg-white rounded-xl shadow-xl w-[500px] h-[600px] overflow-hidden">
         {/* Content container */}

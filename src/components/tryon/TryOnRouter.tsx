@@ -159,6 +159,7 @@ export const TryOnRouter: React.FC<TryOnRouterProps> = ({
     setStep("onboarding");
   };
 
+  // Ensure all screen components properly pass through the onClose handler
   switch (step) {
     case "login":
       return <LoginScreen onNext={handleLoginSuccess} onClose={onClose} onSignUp={handleSignUpClick} />;

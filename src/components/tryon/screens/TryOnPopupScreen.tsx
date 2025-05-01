@@ -93,16 +93,39 @@ export const TryOnPopupScreen: React.FC<TryOnPopupScreenProps> = ({
     // eslint-disable-next-line
   }, [open]);
 
-  // Save image handler
+  // Modified Save image handler to download directly without navigation
   const handleSave = () => {
     if (tryOnImage) {
+      // Create a temporary anchor element to trigger the download
       const link = document.createElement("a");
-      link.href = tryOnImage;
-      link.download = `try-on-${productName.replace(/\s/g, "-")}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast({ title: "Image saved", description: "Saved to your device." });
+      
+      // Fetch the image first to ensure we're handling it as a blob
+      fetch(tryOnImage)
+        .then(response => response.blob())
+        .then(blob => {
+          // Create an object URL for the blob
+          const objectURL = window.URL.createObjectURL(blob);
+          
+          // Set up the download
+          link.href = objectURL;
+          link.download = `try-on-${productName.replace(/\s/g, "-")}.png`;
+          document.body.appendChild(link);
+          link.click();
+          
+          // Clean up
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(objectURL);
+          
+          toast({ title: "Image saved", description: "Saved to your device." });
+        })
+        .catch(error => {
+          console.error("Error downloading image:", error);
+          toast({ 
+            title: "Download failed", 
+            description: "Could not download the image.",
+            variant: "destructive"
+          });
+        });
     }
   };
 
@@ -144,10 +167,10 @@ export const TryOnPopupScreen: React.FC<TryOnPopupScreenProps> = ({
         >
           <X className="h-5 w-5 text-gray-500" />
         </button>
-        {/* Navbar Logo (instead of MiraLogoOverlay) */}
+        {/* Updated logo path */}
         <div className="w-full flex items-center justify-start pl-5 pt-4 pb-3">
           <img
-            src="/lovable-uploads/62ec2fd6-86b9-484d-b076-a102d794019d.png"
+            src="/lovable-uploads/aa9a914e-077a-4c57-b8f4-a66c0d337df2.png"
             alt="Mira logo"
             className="w-28 h-auto"
           />
@@ -219,4 +242,3 @@ export const TryOnPopupScreen: React.FC<TryOnPopupScreenProps> = ({
     </div>
   );
 };
-
