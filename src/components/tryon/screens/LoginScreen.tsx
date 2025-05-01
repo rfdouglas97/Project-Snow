@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PopupCloseButton } from "../common/PopupCloseButton";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { FaGoogle } from "react-icons/fa";
@@ -120,9 +119,6 @@ export const LoginScreen: React.FC<{
           className="w-full h-auto object-contain"
         />
       </div>
-
-      {/* Close Button */}
-      <PopupCloseButton onClick={onClose} />
       
       {/* Main Content Container - With extra top padding to avoid overlapping the logo */}
       <div className="relative z-20 flex-1 flex flex-col items-center justify-between px-8">
