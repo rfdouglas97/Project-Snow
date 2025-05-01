@@ -130,10 +130,10 @@ export const AvatarUploadScreen: React.FC<AvatarUploadScreenProps> = ({
 
   return (
     <div className="relative w-[500px] h-[600px] flex flex-col items-center pt-8 pb-6 px-4 bg-white rounded-2xl shadow-lg overflow-hidden">
-      {/* Custom logo implementation */}
+      {/* Updated logo with new image path */}
       <div className="absolute top-4 left-4 flex items-center">
         <img 
-          src="/lovable-uploads/mira-logo.png" 
+          src="/lovable-uploads/aa9a914e-077a-4c57-b8f4-a66c0d337df2.png" 
           alt="Mira Logo"
           width={48}
           height={48}
