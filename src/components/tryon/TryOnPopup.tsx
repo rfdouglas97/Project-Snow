@@ -14,7 +14,6 @@ export const TryOnPopup: React.FC<TryOnPopupProps> = ({
 }) => {
   if (!open) return null;
   
-  // Added click handler for backdrop to ensure closing works from multiple places
   return (
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
@@ -26,7 +25,7 @@ export const TryOnPopup: React.FC<TryOnPopupProps> = ({
       }}
     >
       {/* Fixed-size container with no scrolling */}
-      <div className="relative bg-white rounded-xl shadow-xl w-[500px] h-[600px] overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-xl w-[500px] h-[600px] overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {/* Content container */}
         <div className="w-full h-full">{children}</div>
       </div>

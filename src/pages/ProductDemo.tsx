@@ -27,8 +27,10 @@ const ProductDemo = () => {
     },
   ];
 
-  // Only needed if you want to track flow step; we no longer need to pass header prop logic
-  // const [popupStep, setPopupStep] = useState<null | string>(null);
+  const handleClosePopup = () => {
+    console.log("Closing popup from ProductDemo");
+    setShowMiraPopup(false);
+  };
 
   return (
     <div className="py-12 px-4 sm:px-6 lg:px-8">
@@ -82,10 +84,10 @@ const ProductDemo = () => {
                       {/* Modal: Try-On Full Flow */}
                       <TryOnPopup
                         open={showMiraPopup}
-                        onClose={() => setShowMiraPopup(false)}
+                        onClose={handleClosePopup}
                       >
                         <TryOnRouter
-                          onClose={() => setShowMiraPopup(false)}
+                          onClose={handleClosePopup}
                           defaultStep="login"
                         />
                       </TryOnPopup>
